@@ -1,0 +1,9 @@
+{
+    "name": "corner.js",
+    "version": "0.1.0",
+    "dependencies": {
+        "grunt": "*",
+        "grunt-contrib-uglify": "*",
+        "grunt-contrib-concat": "*"
+    }
+}
