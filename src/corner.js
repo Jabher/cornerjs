@@ -33,7 +33,7 @@ window.directive = (function () {
             replace     : false                                      //replace content with template or append
         },
         directives = {},
-        observer = new MutationObserver(observer_function)
+        observer = new MutationObserver(observer_function);
 
     if (document.body) {
         observer.observe(document.body, {
@@ -54,7 +54,7 @@ window.directive = (function () {
                     removedNodes: [],
                     target      : document.body
                 }
-            ])
+            ]);
 
             observer.observe(document.body, {
                 attributes: true,
@@ -65,7 +65,7 @@ window.directive = (function () {
     }
 
     directive_processor.config = config;
-    return directive_processor
+    return directive_processor;
 
     function directive_processor(directive_name, directive_body) {
         if ((typeof directive_name === "string") && ((["object", "function"]).indexOf(typeof directive_body) !== -1)) {
@@ -80,6 +80,7 @@ window.directive = (function () {
     }
 
     function create_directive(name, directive) {
+        name = name.toLowerCase();
         function complete_from_common(element, common_element) {
             for (var directive_item in common_element) {
                 element[directive_item] = element[directive_item] || common_element[directive_item]
@@ -113,11 +114,12 @@ window.directive = (function () {
                             }
                             break;
                         default:
-                            var proxy = function (node) {
+                            mutationRecord.addedNodes.forEach(function (node) {
                                 apply_directive_in_subtree(directive_name, 'load', node)
-                            }
-                            mutationRecord.addedNodes.forEach(proxy);
-                            mutationRecord.removedNodes.forEach(proxy);
+                            });
+                            mutationRecord.removedNodes.forEach(function (node) {
+                                apply_directive_in_subtree(directive_name, 'unload', node)
+                            });
                     }
                 }
             }
@@ -139,18 +141,21 @@ window.directive = (function () {
         aliases.forEach(function (name) {
             if (node.classList && node.classList.forEach || node.className) {
                 (node.classList || (node.className && node.className.split(' '))).forEach(function (class_name) {
-                    if (class_name === name) {has_directive = true}
+                    if (class_name.toLowerCase() === name) {has_directive = true}
                 })
             }
-            if (node.attributes && node.attributes.forEach) { // in case if node is a text node
+
+            if (node.attributes && node.attributes.forEach) { // check if node is not a text node
                 node.attributes.forEach(function (attribute) {
-                    if (attribute.name === name) {
-                        has_directive = true;
-                        attribute_value = node.attributes.getNamedItem(name).textContent;
+                    if (attribute.name !== 'class' && attribute.name !== 'href') { //todo убрать, повесить основные элементы, вынести в конфиг
+                        if (attribute.name.toLowerCase() === name) {
+                            has_directive = true;
+                            attribute_value = attribute.textContent;
+                        }
                     }
                 })
             }
-        })
+        });
         if (has_directive) {
             var attribute;
             if (attribute_value) {
@@ -187,7 +192,7 @@ window.directive = (function () {
                                             throw directives[name].template_url + ' is not reachable. Cancelling "' + name + '" directive call'
                                         }
                                     }
-                                }
+                                };
                                 xmlhttp.open("GET", directives[name].template_url, true);
                                 xmlhttp.send();
                             })(new XMLHttpRequest());
@@ -200,10 +205,10 @@ window.directive = (function () {
                         }
                         break;
                     case 'unload':
-                        directives[name][action].call(node, attribute)
+                        directives[name][action].call(node, attribute);
                         break;
                 }
             })(directive_name, action, node, attribute)
         }
     }
-})()
+})();
