@@ -51,7 +51,11 @@ window.directive = (function () {
     if (document.readyState == 'complete') {
         shoot_observer()
     } else {
-        document.addEventListener("DOMContentLoaded", shoot_observer, false)
+        if (document.addEventListener) {
+            document.addEventListener("DOMContentLoaded", shoot_observer, false)
+        } else {
+            document.attachEvent('DOMContentLoaded', shoot_observer)
+        }
     }
     function directive_processor(directive_name, directive_body) {
         if (!config.allow_after_DOMReady && document.readyState == 'complete') {
@@ -138,7 +142,9 @@ window.directive = (function () {
                 return function (content) {
                     var attribute = node_directive.attribute ? smart_eval(node_directive.attribute.value) : undefined;
                     if (content) {set_node_content(node, content, directive.replace)}
-                    directive.load.call(node[directive.name], node, attribute);
+                    if (directive.load) {
+                        directive.load.call(node[directive.name], node, attribute);
+                    }
                 }
             })(node_directive, directive);
 
@@ -153,7 +159,9 @@ window.directive = (function () {
     function node_unloaded(node) {
         if (node.directives) {
             for (var directive_name in node.directives) {
-                directives[directive_name].unload.call(node[directive_name], node);
+                if (directives[directive_name].unload) {
+                    directives[directive_name].unload.call(node[directive_name], node);
+                }
             }
         }
     }
@@ -164,7 +172,9 @@ window.directive = (function () {
             var attribute = node.attributes.getNamedItem(mutationRecord.attributeName).value;
             if (node_directive_scope.attribute.value !== attribute) {
                 node_directive_scope.attribute.value = attribute;
-                node_directive_scope.directive.alter.call(node_directive_scope, node, smart_eval(attribute))
+                if (node_directive_scope.directive.alter) {
+                    node_directive_scope.directive.alter.call(node_directive_scope, node, smart_eval(attribute))
+                }
             }
         }
     }
@@ -198,7 +208,7 @@ window.directive = (function () {
                         if (class_name == alias) {
                             class_directives_list.push({
                                 directive: directive,
-                                class    : class_name
+                                'class'  : class_name
                             })
                         }
                     })

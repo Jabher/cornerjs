@@ -21,13 +21,13 @@ if (typeof WeakMap !== 'undefined' && navigator.userAgent.indexOf('Firefox/') < 
         };
 
         window.SideTable.prototype = {
-            set   : function (key, value) {
+            'set'   : function (key, value) {
                 defineProperty(key, this.name, {value: value, writable: true});
             },
-            get   : function (key) {
+            'get'   : function (key) {
                 return hasOwnProperty.call(key, this.name) ? key[this.name] : undefined;
             },
-            delete: function (key) {
+            'delete': function (key) {
                 this.set(key, undefined);
             }
         }
