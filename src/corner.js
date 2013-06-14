@@ -57,6 +57,7 @@ window.directive = (function () {
             document.attachEvent('DOMContentLoaded', shoot_observer)
         }
     }
+
     function directive_processor(directive_name, directive_body) {
         if (!config.allow_after_DOMReady && document.readyState == 'complete') {
             console.error('trying to register directive ' + directive_name + ' after DOM loaded; current config prohibits this action')

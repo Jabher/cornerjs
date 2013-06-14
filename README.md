@@ -118,7 +118,7 @@ If you are using jQuery just use $('#selector')[0] to get access to original nod
 
 ## Plans for future
 
-[]IE 8 support(polyfills fix)
-[]Speed tests
-[]Re-writing weakMap polyfill
-[]bringing 'directives' and 'directive_aliaces' from nodes to weakMap so that no tech data will be available in DOM three
+- [ ] IE 8 support(polyfills fix)
+- [ ] Speed tests
+- [ ] Re-writing weakMap polyfill
+- [ ] Bringing 'directives' and 'directive_aliaces' from nodes to weakMap so that no tech data will be available in DOM three
