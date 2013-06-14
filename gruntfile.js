@@ -10,6 +10,8 @@ module.exports = function (grunt) {
                     'src/EC5-polyfills.js',
                     'src/WeakMap-polyfill.js',
                     'src/MutationObserver-polyfill.js',
+                    'src/requirements_tests.js',
+                    'src/helpers.js',
                     'src/corner.js'
                 ],
                 dest: 'build/<%= pkg.name %>'

@@ -6,7 +6,7 @@ describe 'attributes support', ->
     obtainedValue = undefined
 
     runs ->
-      directive directiveName, (attr)->
+      directive directiveName, (node, attr)->
         directiveCalled = true
         obtainedValue = attr
 
@@ -26,9 +26,9 @@ describe 'attributes support', ->
     obtainedValue = undefined
 
     runs ->
-      directive directiveName, (config)->
+      directive directiveName, (node, attr)->
         directiveCalled = true
-        obtainedValue = config.a
+        obtainedValue = attr.a
 
       $(document.body).append('<div ' + directiveName + '="a: ' + directiveValue + '"></div>')
 

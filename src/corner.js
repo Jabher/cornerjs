@@ -1,97 +1,88 @@
 window.directive = (function () {
-    if (!window.XMLHttpRequest) {
-        throw 'XMLHttpRequest not found'
-    }
-    if (!window.MutationObserver) {
-        //requerments check
-        throw 'MutationObserver (or polyfill) not found'
-    }
-    if (!Array.prototype.indexOf && !Array.prototype.forEach && !Array.prototype.filter) {
-        //requerments check
-        throw 'Array EC5 extensions (or polyfills) not found'
-    }
+    //validations and preparations section. Expand only
+    check_if_exist(window.XMLHttpRequest, 'XMLHttpRequest not found');
+    check_if_exist(window.MutationObserver, 'MutationObserver (or polyfill) not found');
+    check_if_exist(Array.prototype.indexOf, Array.prototype.forEach, Array.prototype.filter, 'MutationObserver (or polyfill) not found');
+
     NodeList.prototype.forEach = NodeList.prototype.forEach || Array.prototype.forEach;
     HTMLCollection.prototype.forEach = HTMLCollection.prototype.forEach || Array.prototype.forEach;
     DOMTokenList.prototype.forEach = DOMTokenList.prototype.forEach || Array.prototype.forEach;
     NamedNodeMap.prototype.forEach = NamedNodeMap.prototype.forEach || Array.prototype.forEach;
-
-    var config = {
-            prefixes      : ['data', 'directive'],
-            allow_override: false
+    //configuration section. Free to modify
+    var config = directive_processor.config = {
+        prefixes            : ['data', 'directive'],
+        allow_override      : false,
+        allow_after_DOMReady: true,
+        ignored_attributes  : ['class', 'href']
+    };
+    var common_directive = {
+        load        : function () {                                 //on load
         },
-        common_directive = {
-            load        : function () {                                 //on load
-            },
-            ready       : function () {                                //on images loaded. to be implemented
-            },
-            alter       : function () {                                //on attributes change. to be implemented
-            },
-            unload      : function () {                               //on unload
-            },
-            template    : undefined,                                //template
-            template_url: undefined,                                //template
-            replace     : false                                      //replace content with template or append
+        ready       : function () {                                //on images loaded. to be implemented
         },
-        directives = {},
-        observer = new MutationObserver(observer_function);
+        alter       : function () {                                //on attributes change. to be implemented
+        },
+        unload      : function () {                               //on unload
+        },
+        template    : undefined,                                //template
+        template_url: undefined,                                //template
+        replace     : false                                      //replace content with template or append
+    };
+    var directives = directive_processor.directives = {};
+    var observer = new MutationObserver(observer_function);
 
-    if (document.body) {
+    //DO-NOT-TOUCH section. Only bug fixes and extensions are possible
+    function shoot_observer() {
+        //emulating mutationObserver call with whole body after it's ready. It's quite better and gives browser a chance to load faster and not disturb on callback loop.
+        observer_function([
+            {
+                addedNodes  : [document.body],
+                removedNodes: [],
+                target      : document.body
+            }
+        ]);
         observer.observe(document.body, {
             attributes: true,
             childList : true,
             subtree   : true
         })
-    } else {
-        (function (callback) {
-            document.addEventListener && document.addEventListener("DOMContentLoaded", callback, false)
-            //todo: think. not sure if i really need ie7- document load model while not supporting it in XNRrequest
-            document.attachEvent && document.attachEvent("onreadystatechange", callback)
-        })(function () {
-            //emulating mutationObserver call with whole body after it's ready. It's quite better and gives browser a chance to load faster and not disturb on callback loop.
-            observer_function([
-                {
-                    addedNodes  : [document.body],
-                    removedNodes: [],
-                    target      : document.body
-                }
-            ]);
-
-            observer.observe(document.body, {
-                attributes: true,
-                childList : true,
-                subtree   : true
-            })
-        })
     }
 
-    directive_processor.config = config;
+    if (document.readyState == 'complete') {
+        shoot_observer()
+    } else {
+        document.addEventListener("DOMContentLoaded", shoot_observer, false)
+    }
+    function directive_processor(directive_name, directive_body) {
+        if (!config.allow_after_DOMReady && document.readyState == 'complete') {
+            console.error('trying to register directive ' + directive_name + ' after DOM loaded; current config prohibits this action')
+        } else if (check_if_valid(
+            typeof directive_name === "string",
+            (directive_body instanceof Object) || (directive_body instanceof Function),
+            'incorrect directive call format')
+            ) {
+            directive_name = directive_name.toLowerCase();
+            if (!directives[directive_name] || config.allow_override) {
+                return create_directive(directive_name, directive_body)
+            } else {
+                console.error('trying to register already registered directive ' + directive_name)
+            }
+        }
+        return false
+    }
+
     return directive_processor;
 
-    function directive_processor(directive_name, directive_body) {
-        if ((typeof directive_name === "string") && ((["object", "function"]).indexOf(typeof directive_body) !== -1)) {
-            if (!directives[directive_name] || config.allow_override) {
-                create_directive(directive_name, directive_body)
-            } else {
-                throw 'trying to register already registred directive ' + directive_name
-            }
-        } else {
-            throw 'incorrect directive call format'
-        }
-    }
-
     function create_directive(name, directive) {
-        name = name.toLowerCase();
-        function complete_from_common(element, common_element) {
-            for (var directive_item in common_element) {
-                element[directive_item] = element[directive_item] || common_element[directive_item]
-            }
-            return element
+        if (directive instanceof Function) {directive = {load: directive}}
+        for (var directive_item in common_directive) {
+            directive[directive_item] = directive[directive_item] || directive[directive_item]
         }
-
-        if (typeof directive === typeof function () {}) {directive = {load: directive}}
-
-        directive = complete_from_common(directive, common_directive);
         directive.name = name;
+        directive.aliases = [name];
+        config.prefixes.forEach(function (prefix) {
+            directive.aliases.push(prefix + '-' + name)
+        });
         directives[name] = directive;
         return directive
     }
@@ -99,116 +90,172 @@ window.directive = (function () {
     function observer_function(mutationRecords) {
         mutationRecords.forEach(
             function process_mutation_record(mutationRecord) {
-                for (var directive_name in directives) {
-                    switch (mutationRecord.type) {
-                        case "attributes":
-                            var target = mutationRecord.target,
-                                attribute_name = mutationRecord.attributeName,
-                                attribute_directive = attribute_name;
-                            config.prefixes.forEach(function (prefix) {
-                                attribute_directive = attribute_directive.replace(prefix + '-', '');
-                            });
-                            if (attribute_directive == directive_name) {
-                                var attribute = target.attributes.getNamedItem(attribute_name);
-                                directives[directive_name].alter.call(target, attribute ? attribute.value : void 0);
-                            }
-                            break;
-                        default:
-                            mutationRecord.addedNodes.forEach(function (node) {
-                                apply_directive_in_subtree(directive_name, 'load', node)
-                            });
-                            mutationRecord.removedNodes.forEach(function (node) {
-                                apply_directive_in_subtree(directive_name, 'unload', node)
-                            });
-                    }
+                switch (mutationRecord.type) {
+                    case "attributes":
+                        node_altered(mutationRecord.target, mutationRecord)
+                        break;
+                    default:
+                        mutationRecord.addedNodes.forEach(function (node) {
+                            apply_directives_in_subtree('load', node)
+                        });
+                        mutationRecord.removedNodes.forEach(function (node) {
+                            apply_directives_in_subtree('unload', node)
+                        });
                 }
             }
         )
     }
 
-    function apply_directive_in_subtree(directive_name, action, node) {
+    function apply_directives_in_subtree(action, node) {
         //child directives should be initialised earlier then parent ones
         if (node.children && node.children.forEach) {
-            node.children.forEach(function (child) {apply_directive_in_subtree(directive_name, action, child)})
+            node.children.forEach(function (child) {apply_directives_in_subtree(action, child)})
         }
-        var has_directive = false;
-        var attribute_value;
-        var aliases = [directive_name];
-        config.prefixes.forEach(function (prefix) {
-            aliases.push(prefix + '-' + directive_name)
-        });
 
-        aliases.forEach(function (name) {
-            if (node.classList && node.classList.forEach || node.className) {
-                (node.classList || (node.className && node.className.split(' '))).forEach(function (class_name) {
-                    if (class_name.toLowerCase() === name) {has_directive = true}
-                })
-            }
+        switch (action) {
+            case 'load':
+                node_loaded(node);
+                break;
+            case 'unload':
+                node_unloaded(node);
+                break;
+        }
+    }
 
-            if (node.attributes && node.attributes.forEach) { // check if node is not a text node
-                node.attributes.forEach(function (attribute) {
-                    if (attribute.name !== 'class' && attribute.name !== 'href') { //todo убрать, повесить основные элементы, вынести в конфиг
-                        if (attribute.name.toLowerCase() === name) {
-                            has_directive = true;
-                            attribute_value = attribute.textContent;
-                        }
-                    }
-                })
-            }
-        });
-        if (has_directive) {
-            var attribute;
-            if (attribute_value) {
-                try {
-                    attribute = eval('({' + attribute_value + '})');
-                } catch (exception) {
-                    try {
-                        attribute = eval(attribute_value)
-                    } catch (exception) {
-                        attribute = attribute_value;
-                    }
+    //events processor section. New processors should be added here
+    function node_loaded(node) {
+        node.directives = detect_directives_for_node(node);
+        generate_attribute_directive_aliases(node);
+        for (var directive_name in node.directives) {
+            generate_directive_scope(node, node.directives[directive_name].directive);
+        }
+
+        for (var directive_name in node.directives) {
+            var node_directive = node.directives[directive_name],
+                directive = node_directive.directive;
+
+            var caller = (function (node_directive, directive) {
+                return function (content) {
+                    var attribute = node_directive.attribute ? smart_eval(node_directive.attribute.value) : undefined;
+                    if (content) {set_node_content(node, content, directive.replace)}
+                    directive.load.call(node[directive.name], node, attribute);
                 }
+            })(node_directive, directive);
+
+            if (directive.template_url) {
+                $ajax.get(directive.template_url, caller)
+            } else {
+                caller(directive.template)
             }
+        }
+    }
 
-            (function do_directive_action_call(name, action, node, attribute) {
-                switch (action) {
-                    case 'load':
-                    function setContent(element, content, replace) {
-                        if (replace) {
-                            element.innerHTML = content
-                        } else {
-                            element.insertAdjacentHTML('beforeend', content)
+    function node_unloaded(node) {
+        if (node.directives) {
+            for (var directive_name in node.directives) {
+                directives[directive_name].unload.call(node[directive_name], node);
+            }
+        }
+    }
+
+    function node_altered(node, mutationRecord) {
+        var node_directive_scope = node.directive_aliases[mutationRecord.attributeName];
+        if (node_directive_scope && node_directive_scope.attribute) {
+            var attribute = node.attributes.getNamedItem(mutationRecord.attributeName).value;
+            if (node_directive_scope.attribute.value !== attribute) {
+                node_directive_scope.attribute.value = attribute;
+                node_directive_scope.directive.alter.call(node_directive_scope, node, smart_eval(attribute))
+            }
+        }
+    }
+
+    //event processor helpers section. Helper functions should be placed here
+    function generate_attribute_directive_aliases(node) {
+        node.directive_aliases = {};
+        for (var directive_name in node.directives) {
+            if (node.directives[directive_name].attribute) {
+                node.directive_aliases[node.directives[directive_name].attribute.name] = node.directives[directive_name]
+            }
+        }
+    }
+
+    function generate_directive_scope(node, directive) {
+        node[directive.name] = {
+            directive: directive,
+            node     : node
+        }
+    }
+
+    function resolve_directives_in_classes(node) {
+        var class_directives_list = [];
+        if (node.classList || node.className) {
+            node.classList = node.classList || node.className.split(' ');
+            node.classList.forEach(function (class_name) {
+                class_name = class_name.toLowerCase();
+                for (var directive_name in directives) {
+                    var directive = directives[directive_name];
+                    directive.aliases.forEach(function (alias) {
+                        if (class_name == alias) {
+                            class_directives_list.push({
+                                directive: directive,
+                                class    : class_name
+                            })
                         }
-                    }
+                    })
+                }
+            });
+        }
+        return class_directives_list
+    }
 
-                        if (directives[name].template_url) {
-                            (function (xmlhttp) {
-                                xmlhttp.onreadystatechange = function () {
-                                    if (xmlhttp.readyState == 4) {
-                                        if (xmlhttp.status == 200) {
-                                            setContent(node, xmlhttp.responseText, directives[name].replace);
-                                            directives[name][action].call(node, attribute);
-                                        } else {
-                                            throw directives[name].template_url + ' is not reachable. Cancelling "' + name + '" directive call'
+    function resolve_directives_in_attributes(node) {
+        var attribute_directives_list = [];
+        if (node.attributes && node.attributes.forEach) { // check if node is not a text node
+            node.attributes.forEach(function (attribute) {
+                if (config.ignored_attributes.indexOf(attribute.name) == -1) {
+                    var attribute_name = attribute.name.toLowerCase();
+                    for (var directive_name in directives) {
+                        var directive = directives[directive_name];
+                        directive.aliases.forEach(function (alias) {
+                            if (attribute_name == alias) {
+                                var attribute_value = attribute.textContent,
+                                    parsed_value;
+                                if (attribute_value) {
+                                    try {
+                                        parsed_value = eval('({' + attribute_value + '})');
+                                    } catch (exception) {
+                                        try {
+                                            parsed_value = eval(attribute_value)
+                                        } catch (exception) {
+                                            parsed_value = attribute_value;
                                         }
                                     }
-                                };
-                                xmlhttp.open("GET", directives[name].template_url, true);
-                                xmlhttp.send();
-                            })(new XMLHttpRequest());
-
-                        } else {
-                            if (directives[name].template) {
-                                setContent(node, directives[name].template, directives[name].replace);
+                                }
+                                attribute_directives_list.push({
+                                    directive: directive,
+                                    attribute: {
+                                        name        : attribute_name,
+                                        value       : attribute_value,
+                                        parsed_value: parsed_value
+                                    }
+                                })
                             }
-                            directives[name][action].call(node, attribute);
-                        }
-                        break;
-                    case 'unload':
-                        directives[name][action].call(node, attribute);
-                        break;
+                        })
+                    }
                 }
-            })(directive_name, action, node, attribute)
+            })
         }
+        return attribute_directives_list
+    }
+
+    function detect_directives_for_node(node) {
+        var directives_list = {};
+        resolve_directives_in_classes(node).forEach(function (class_directive_instance) {
+            directives_list[class_directive_instance.directive.name] = class_directive_instance
+        });
+        resolve_directives_in_attributes(node).forEach(function (attr_directive_instance) {
+            directives_list[attr_directive_instance.directive.name] = attr_directive_instance
+        });
+        return directives_list
     }
 })();
