@@ -6,6 +6,8 @@ Easy to use directives engine, that gives you a super-ability just to put into t
  - intervals and timeouts
  - on-element-appear actions
 
+It's totally not about data-binding and models. It's about throwing away all the pieces of code that are not connected with anything else and depends only on their appearance in DOM three.
+
 How it works?
 
     directive('foo', function(){alert('bar')});
@@ -112,3 +114,11 @@ I strongly recommend to leave config in the beginning as-is or at least leave "d
 
 ## jQuery
 If you are using jQuery just use $('#selector')[0] to get access to original node
+
+
+## Plans for future
+
+[]IE 8 support(polyfills fix)
+[]Speed tests
+[]Re-writing weakMap polyfill
+[]bringing 'directives' and 'directive_aliaces' from nodes to weakMap so that no tech data will be available in DOM three
