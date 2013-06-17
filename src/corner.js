@@ -4,10 +4,6 @@ window.directive = (function () {
     check_if_exist(window.MutationObserver, 'MutationObserver (or polyfill) not found');
     check_if_exist(Array.prototype.indexOf, Array.prototype.forEach, Array.prototype.filter, 'MutationObserver (or polyfill) not found');
 
-    NodeList.prototype.forEach = NodeList.prototype.forEach || Array.prototype.forEach;
-    HTMLCollection.prototype.forEach = HTMLCollection.prototype.forEach || Array.prototype.forEach;
-    DOMTokenList.prototype.forEach = DOMTokenList.prototype.forEach || Array.prototype.forEach;
-    NamedNodeMap.prototype.forEach = NamedNodeMap.prototype.forEach || Array.prototype.forEach;
     //configuration section. Free to modify
     var config = directive_processor.config = {
         prefixes            : ['data', 'directive'],
@@ -100,10 +96,10 @@ window.directive = (function () {
                         node_altered(mutationRecord.target, mutationRecord)
                         break;
                     default:
-                        mutationRecord.addedNodes.forEach(function (node) {
+                        Array.prototype.forEach.call(mutationRecord.addedNodes, function (node) {
                             apply_directives_in_subtree('load', node)
                         });
-                        mutationRecord.removedNodes.forEach(function (node) {
+                        Array.prototype.forEach.call(mutationRecord.removedNodes, function (node) {
                             apply_directives_in_subtree('unload', node)
                         });
                 }
@@ -113,8 +109,8 @@ window.directive = (function () {
 
     function apply_directives_in_subtree(action, node) {
         //child directives should be initialised earlier then parent ones
-        if (node.children && node.children.forEach) {
-            node.children.forEach(function (child) {apply_directives_in_subtree(action, child)})
+        if (node.children) {
+            Array.prototype.forEach.call(node.children, function (child) {apply_directives_in_subtree(action, child)})
         }
 
         switch (action) {
@@ -168,13 +164,15 @@ window.directive = (function () {
     }
 
     function node_altered(node, mutationRecord) {
-        var node_directive_scope = node.directive_aliases[mutationRecord.attributeName];
-        if (node_directive_scope && node_directive_scope.attribute) {
-            var attribute = node.attributes.getNamedItem(mutationRecord.attributeName).value;
-            if (node_directive_scope.attribute.value !== attribute) {
-                node_directive_scope.attribute.value = attribute;
-                if (node_directive_scope.directive.alter) {
-                    node_directive_scope.directive.alter.call(node_directive_scope, node, smart_eval(attribute))
+        if (node.directive_aliases) {
+            var node_directive_scope = node.directive_aliases[mutationRecord.attributeName];
+            if (node_directive_scope && node_directive_scope.attribute) {
+                var attribute = node.attributes.getNamedItem(mutationRecord.attributeName).value;
+                if (node_directive_scope.attribute.value !== attribute) {
+                    node_directive_scope.attribute.value = attribute;
+                    if (node_directive_scope.directive.alter) {
+                        node_directive_scope.directive.alter.call(node_directive_scope, node, smart_eval(attribute))
+                    }
                 }
             }
         }
@@ -200,8 +198,8 @@ window.directive = (function () {
     function resolve_directives_in_classes(node) {
         var class_directives_list = [];
         if (node.classList || node.className) {
-            node.classList = node.classList || node.className.split(' ');
-            node.classList.forEach(function (class_name) {
+            node.classList = node.classList || node.className.split(' ') || [];
+            Array.prototype.forEach.call(node.classList, function (class_name) {
                 class_name = class_name.toLowerCase();
                 for (var directive_name in directives) {
                     var directive = directives[directive_name];
@@ -221,8 +219,8 @@ window.directive = (function () {
 
     function resolve_directives_in_attributes(node) {
         var attribute_directives_list = [];
-        if (node.attributes && node.attributes.forEach) { // check if node is not a text node
-            node.attributes.forEach(function (attribute) {
+        if (node.attributes) { // check if node is not a text node
+            Array.prototype.forEach.call(node.attributes, function (attribute) {
                 if (config.ignored_attributes.indexOf(attribute.name) == -1) {
                     var attribute_name = attribute.name.toLowerCase();
                     for (var directive_name in directives) {

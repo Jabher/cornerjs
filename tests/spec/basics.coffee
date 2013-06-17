@@ -14,7 +14,7 @@ describe 'basic functionality', ->
 
     waitsFor(->
       directiveCalled
-    , 'the directive should be called', 100)
+    , 'the directive should be called', 500)
 
     runs ->
       expect(directiveCallback).toHaveBeenCalled()
@@ -26,9 +26,8 @@ describe 'basic functionality', ->
     directiveCalled = false
 
     runs ->
-      directive directiveName, (attr)->
+      directive directiveName, ->
         directiveCalled = true
-        obtainedValue = attr
         directiveCallback()
 
       expect(directiveCallback).not.toHaveBeenCalled()
@@ -36,7 +35,7 @@ describe 'basic functionality', ->
 
     waitsFor(->
       directiveCalled
-    , 'the directive should be called', 100)
+    , 'the directive should be called', 500)
 
     runs ->
       expect(directiveCallback).toHaveBeenCalled()

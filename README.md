@@ -5,8 +5,11 @@ Easy to use directives engine, that gives you a super-ability just to put into t
  - animations
  - intervals and timeouts
  - on-element-appear actions
+ - custom scrolls
 
 It's totally not about data-binding and models. It's about throwing away all the pieces of code that are not connected with anything else and depends only on their appearance in DOM three.
+
+It works in IE9+, FF, Chrome, Opera.
 
 How it works?
 

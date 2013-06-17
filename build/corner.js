@@ -1,3 +1,7 @@
+if (typeof window.addEventListener === 'undefined'){
+    window.addEventListener = window.attachEvent
+}
+
 /*
  * Polyfills from:
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach.
@@ -738,10 +742,6 @@ function smart_eval(content){
     check_if_exist(window.MutationObserver, 'MutationObserver (or polyfill) not found');
     check_if_exist(Array.prototype.indexOf, Array.prototype.forEach, Array.prototype.filter, 'MutationObserver (or polyfill) not found');
 
-    NodeList.prototype.forEach = NodeList.prototype.forEach || Array.prototype.forEach;
-    HTMLCollection.prototype.forEach = HTMLCollection.prototype.forEach || Array.prototype.forEach;
-    DOMTokenList.prototype.forEach = DOMTokenList.prototype.forEach || Array.prototype.forEach;
-    NamedNodeMap.prototype.forEach = NamedNodeMap.prototype.forEach || Array.prototype.forEach;
     //configuration section. Free to modify
     var config = directive_processor.config = {
         prefixes            : ['data', 'directive'],
@@ -785,12 +785,13 @@ function smart_eval(content){
     if (document.readyState == 'complete') {
         shoot_observer()
     } else {
-        if (document.addEventListener){
-        document.addEventListener("DOMContentLoaded", shoot_observer, false)
-        }else {
+        if (document.addEventListener) {
+            document.addEventListener("DOMContentLoaded", shoot_observer, false)
+        } else {
             document.attachEvent('DOMContentLoaded', shoot_observer)
         }
     }
+
     function directive_processor(directive_name, directive_body) {
         if (!config.allow_after_DOMReady && document.readyState == 'complete') {
             console.error('trying to register directive ' + directive_name + ' after DOM loaded; current config prohibits this action')
@@ -833,10 +834,10 @@ function smart_eval(content){
                         node_altered(mutationRecord.target, mutationRecord)
                         break;
                     default:
-                        mutationRecord.addedNodes.forEach(function (node) {
+                        Array.prototype.forEach.call(mutationRecord.addedNodes, function (node) {
                             apply_directives_in_subtree('load', node)
                         });
-                        mutationRecord.removedNodes.forEach(function (node) {
+                        Array.prototype.forEach.call(mutationRecord.removedNodes, function (node) {
                             apply_directives_in_subtree('unload', node)
                         });
                 }
@@ -846,8 +847,8 @@ function smart_eval(content){
 
     function apply_directives_in_subtree(action, node) {
         //child directives should be initialised earlier then parent ones
-        if (node.children && node.children.forEach) {
-            node.children.forEach(function (child) {apply_directives_in_subtree(action, child)})
+        if (node.children) {
+            Array.prototype.forEach.call(node.children, function (child) {apply_directives_in_subtree(action, child)})
         }
 
         switch (action) {
@@ -876,7 +877,9 @@ function smart_eval(content){
                 return function (content) {
                     var attribute = node_directive.attribute ? smart_eval(node_directive.attribute.value) : undefined;
                     if (content) {set_node_content(node, content, directive.replace)}
-                    directive.load.call(node[directive.name], node, attribute);
+                    if (directive.load) {
+                        directive.load.call(node[directive.name], node, attribute);
+                    }
                 }
             })(node_directive, directive);
 
@@ -891,18 +894,24 @@ function smart_eval(content){
     function node_unloaded(node) {
         if (node.directives) {
             for (var directive_name in node.directives) {
-                directives[directive_name].unload.call(node[directive_name], node);
+                if (directives[directive_name].unload) {
+                    directives[directive_name].unload.call(node[directive_name], node);
+                }
             }
         }
     }
 
     function node_altered(node, mutationRecord) {
-        var node_directive_scope = node.directive_aliases[mutationRecord.attributeName];
-        if (node_directive_scope && node_directive_scope.attribute) {
-            var attribute = node.attributes.getNamedItem(mutationRecord.attributeName).value;
-            if (node_directive_scope.attribute.value !== attribute) {
-                node_directive_scope.attribute.value = attribute;
-                node_directive_scope.directive.alter.call(node_directive_scope, node, smart_eval(attribute))
+        if (node.directive_aliases) {
+            var node_directive_scope = node.directive_aliases[mutationRecord.attributeName];
+            if (node_directive_scope && node_directive_scope.attribute) {
+                var attribute = node.attributes.getNamedItem(mutationRecord.attributeName).value;
+                if (node_directive_scope.attribute.value !== attribute) {
+                    node_directive_scope.attribute.value = attribute;
+                    if (node_directive_scope.directive.alter) {
+                        node_directive_scope.directive.alter.call(node_directive_scope, node, smart_eval(attribute))
+                    }
+                }
             }
         }
     }
@@ -927,8 +936,8 @@ function smart_eval(content){
     function resolve_directives_in_classes(node) {
         var class_directives_list = [];
         if (node.classList || node.className) {
-            node.classList = node.classList || node.className.split(' ');
-            node.classList.forEach(function (class_name) {
+            node.classList = node.classList || node.className.split(' ') || [];
+            Array.prototype.forEach.call(node.classList, function (class_name) {
                 class_name = class_name.toLowerCase();
                 for (var directive_name in directives) {
                     var directive = directives[directive_name];
@@ -936,7 +945,7 @@ function smart_eval(content){
                         if (class_name == alias) {
                             class_directives_list.push({
                                 directive: directive,
-                                'class'    : class_name
+                                'class'  : class_name
                             })
                         }
                     })
@@ -948,8 +957,8 @@ function smart_eval(content){
 
     function resolve_directives_in_attributes(node) {
         var attribute_directives_list = [];
-        if (node.attributes && node.attributes.forEach) { // check if node is not a text node
-            node.attributes.forEach(function (attribute) {
+        if (node.attributes) { // check if node is not a text node
+            Array.prototype.forEach.call(node.attributes, function (attribute) {
                 if (config.ignored_attributes.indexOf(attribute.name) == -1) {
                     var attribute_name = attribute.name.toLowerCase();
                     for (var directive_name in directives) {

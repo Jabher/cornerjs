@@ -20,14 +20,14 @@
 
         <script type="text/coffeescript">
             $ ->
-            jasmineEnv = jasmine.getEnv()
-            jasmineEnv.updateInterval = 1000
-            htmlReporter = new jasmine.HtmlReporter()
-            jasmineEnv.addReporter(htmlReporter)
-            jasmineEnv.specFilter = (spec)->
-                htmlReporter.specFilter(spec)
+                jasmineEnv = jasmine.getEnv()
+                jasmineEnv.updateInterval = 1000
+                htmlReporter = new jasmine.HtmlReporter()
+                jasmineEnv.addReporter(htmlReporter)
+                jasmineEnv.specFilter = (spec)->
+                    htmlReporter.specFilter(spec)
 
-            jasmineEnv.execute()
+                jasmineEnv.execute()
         </script>
         <script src="http://coffeescript.org/extras/coffee-script.js"></script>
 
