@@ -85,6 +85,12 @@ window.directive = (function () {
             directive.aliases.push(prefix + '-' + name)
         });
         directives[name] = directive;
+        if (document.readyState == 'complete') {
+            Array.prototype.forEach.call(
+                    document.querySelectorAll(directive.aliases.map(function (alias) {return ('.alias, [alias]').split('alias').join(alias)}).join(', ')),
+                    node_loaded
+            )
+        }
         return directive
     }
 
@@ -127,23 +133,22 @@ window.directive = (function () {
     function node_loaded(node) {
         node.directives = detect_directives_for_node(node);
         generate_attribute_directive_aliases(node);
+
         for (var directive_name in node.directives) {
+            if (node[directive_name]) continue;
             generate_directive_scope(node, node.directives[directive_name].directive);
-        }
 
-        for (var directive_name in node.directives) {
             var node_directive = node.directives[directive_name],
-                directive = node_directive.directive;
-
-            var caller = (function (node_directive, directive) {
-                return function (content) {
-                    var attribute = node_directive.attribute ? smart_eval(node_directive.attribute.value) : undefined;
-                    if (content) {set_node_content(node, content, directive.replace)}
-                    if (directive.load) {
-                        directive.load.call(node[directive.name], node, attribute);
+                directive = node_directive.directive,
+                caller = (function (node_directive, directive) {
+                    return function (content) {
+                        var attribute = node_directive.attribute ? smart_eval(node_directive.attribute.value) : undefined;
+                        if (content) {set_node_content(node, content, directive.replace)}
+                        if (directive.load) {
+                            directive.load.call(node[directive.name], node, attribute);
+                        }
                     }
-                }
-            })(node_directive, directive);
+                })(node_directive, directive);
 
             if (directive.template_url) {
                 $ajax.get(directive.template_url, caller)
