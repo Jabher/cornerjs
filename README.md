@@ -9,7 +9,7 @@ Easy to use directives engine, that gives you a super-ability just to put into t
 
 It's totally not about data-binding and models. It's about throwing away all the pieces of code that are not connected with anything else and depends only on their appearance in DOM three.
 
-It works in IE9+, FF, Chrome, Opera.
+It works in IE9+(only load event in IE8 supported now), FF, Chrome, Opera.
 
 How it works?
 
@@ -121,7 +121,7 @@ If you are using jQuery just use $('#selector')[0] to get access to original nod
 
 ## Plans for future
 
-- IE 8 support(polyfills fix)
+- IE 8 support(polyfills fix). Partially done: 'load' event is supported
 - Speed tests
 - Re-writing weakMap polyfill
 - Bringing 'directives' and 'directive_aliaces' from nodes to weakMap so that no tech data will be available in DOM three

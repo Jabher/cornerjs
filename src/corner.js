@@ -139,6 +139,9 @@ window.directive = (function () {
 
     //events processor section. New processors should be added here
     function node_loaded(node) {
+        if (node.directives) {
+            return
+        }
         node.directives = detect_directives_for_node(node);
         generate_attribute_directive_aliases(node);
 
