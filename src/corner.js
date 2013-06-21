@@ -50,7 +50,15 @@ window.directive = (function () {
         if (document.addEventListener) {
             document.addEventListener("DOMContentLoaded", shoot_observer, false)
         } else {
-            document.attachEvent('DOMContentLoaded', shoot_observer)
+            setInterval(function(){
+                observer_function([
+                    {
+                        addedNodes: [document.body],
+                        removedNodes: [],
+                        target: document.body
+                    }
+                ]);
+            }, 250)
         }
     }
 

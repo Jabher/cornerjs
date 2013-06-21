@@ -12,24 +12,25 @@
 
         <script type="text/javascript" src="/build/corner.js"></script>
 
-        <script type="text/coffeescript" src="spec/requirements.coffee"></script>
-        <script type="text/coffeescript" src="spec/basics.coffee"></script>
-        <script type="text/coffeescript" src="spec/attributes.coffee"></script>
-        <script type="text/coffeescript" src="spec/templates.coffee"></script>
+        <script type="text/javascript" src="spec/requirements.js"></script>
+        <script type="text/javascript" src="spec/basics.js"></script>
+        <script type="text/javascript" src="spec/attributes.js"></script>
+        <script type="text/javascript" src="spec/templates.js"></script>
 
 
-        <script type="text/coffeescript">
-            $ ->
-                jasmineEnv = jasmine.getEnv()
-                jasmineEnv.updateInterval = 1000
-                htmlReporter = new jasmine.HtmlReporter()
-                jasmineEnv.addReporter(htmlReporter)
-                jasmineEnv.specFilter = (spec)->
-                    htmlReporter.specFilter(spec)
-
-                jasmineEnv.execute()
+        <script type="text/javascript">
+            $(function() {
+                var htmlReporter, jasmineEnv;
+                    jasmineEnv = jasmine.getEnv();
+                    jasmineEnv.updateInterval = 1000;
+                    htmlReporter = new jasmine.HtmlReporter();
+                    jasmineEnv.addReporter(htmlReporter);
+                    jasmineEnv.specFilter = function(spec) {
+            return htmlReporter.specFilter(spec);
+            };
+            return jasmineEnv.execute();
+            });
         </script>
-        <script src="http://coffeescript.org/extras/coffee-script.js"></script>
-
+        <!--<script src="http://coffeescript.org/extras/coffee-script.js"></script>-->
     </body>
 </html>
