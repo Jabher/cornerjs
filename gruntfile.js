@@ -24,9 +24,8 @@ module.exports = function (grunt) {
         uglify: {
             my_target: {
                 files: {
-                    'build/corner.min.js': [
-                        'build/corner.js'
-                    ]
+                    'build/corner.min.js': [ 'build/corner.js' ],
+                    'build/corner.core.min.js': [ 'build/corner.core.js' ]
                 }
             },
             options: {
