@@ -1,18 +1,22 @@
 module.exports = function (grunt) {
     grunt.initConfig({
-        pkg   : grunt.file.readJSON('package.json'),
+        pkg: grunt.file.readJSON('package.json'),
+        coffee: {
+            compile: {
+                files: {
+                    'build/corner.core.js': 'src/corner.coffee'
+                }
+            }
+        },
         concat: {
             options: {
                 separator: ';'
             },
-            dist   : {
-                src : [
-                    'src/EC5-polyfills.js',
+            dist: {
+                src: [
                     'src/WeakMap-polyfill.js',
                     'src/MutationObserver-polyfill.js',
-                    'src/requirements_tests.js',
-                    'src/helpers.js',
-                    'src/corner.js'
+                    'build/corner.core.js'
                 ],
                 dest: 'build/<%= pkg.name %>'
             }
@@ -25,7 +29,7 @@ module.exports = function (grunt) {
                     ]
                 }
             },
-            options  : {
+            options: {
                 compress: true,
                 banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
                     '<%= grunt.template.today("yyyy-mm-dd") %> */'
@@ -33,7 +37,8 @@ module.exports = function (grunt) {
         }
     });
 
+    grunt.loadNpmTasks('grunt-contrib-coffee');
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-concat');
-    grunt.registerTask('compile', ['concat', 'uglify']);
+    grunt.registerTask('compile', ['coffee', 'concat', 'uglify']);
 };

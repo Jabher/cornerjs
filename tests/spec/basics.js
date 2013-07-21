@@ -39,7 +39,27 @@ describe('basic functionality', function() {
             return expect(directiveCallback).toHaveBeenCalled();
         });
     });
-    return it('shoot event on destruction', function() {
+    it('tag directive declaration', function() {
+        var directiveCallback, directiveCalled, directiveName;
+        directiveName = 'attrTagDirective';
+        directiveCallback = jasmine.createSpy(directiveName + 'Callback');
+        directiveCalled = false;
+        runs(function() {
+            directive(directiveName, function() {
+                directiveCalled = true;
+                return directiveCallback();
+            });
+            expect(directiveCallback).not.toHaveBeenCalled();
+            return $(document.body).append('<' + directiveName + '/>');
+        });
+        waitsFor(function() {
+            return directiveCalled;
+        }, 'the directive should be called', 500);
+        return runs(function() {
+            return expect(directiveCallback).toHaveBeenCalled();
+        });
+    });
+    it('shoot event on destruction', function() {
         var directiveCallback, directiveName, directiveUnloaderCalled, elementExists;
         directiveName = 'removeTestDirective';
         directiveCallback = jasmine.createSpy(directiveName + 'Callback');
@@ -76,3 +96,5 @@ describe('basic functionality', function() {
         });
     });
 });
+
+

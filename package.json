@@ -1,9 +1,32 @@
 {
     "name": "corner.js",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "dependencies": {
         "grunt": "*",
         "grunt-contrib-uglify": "*",
         "grunt-contrib-concat": "*"
+    },
+    "description": "Easy to use directives engine, that gives you a super-ability just to put into the far corner stuff you want to forget about:\r  - social buttons\r  - animations\r  - intervals and timeouts\r  - on-element-appear actions\r- custom scrolls",
+    "main": "gruntfile.js",
+    "directories": {
+        "test": "tests",
+        "build": "current build",
+        "src": "sources"
+    },
+    "devDependencies": {},
+    "scripts": {
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Jabher/cornerjs.git"
+    },
+    "keywords": [
+        "mutationObserver",
+        "directive"
+    ],
+    "author": "Jabher(Vsevolod Rodionov)",
+    "license": "BSD",
+    "bugs": {
+        "url": "https://github.com/Jabher/cornerjs/issues"
     }
 }
