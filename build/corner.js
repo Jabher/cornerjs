@@ -587,7 +587,7 @@ window.MutationObserver = window.MutationObserver ||
   };
 
   window.directive = (function() {
-    var apply_directives_in_subtree, config, create_directive, directive_processor, directives, node_altered, node_loaded, node_unloaded, observer, observer_function, put_in_queue, resolve_directives_in_attributes, resolve_directives_in_classes, resolve_directives_in_tag, shoot_observer, smart_eval;
+    var apply_directives_in_subtree, config, create_directive, directive_processor, directives, node_altered, node_loaded, node_unloaded, observer, observer_function, parse_node_attrs, put_in_queue, resolve_directives_in_attributes, resolve_directives_in_classes, resolve_directives_in_tag, shoot_observer, smart_eval;
     config = {
       prefixes: ["data-", "directive-", ""],
       ignored_attributes: ["class", "href"]
@@ -624,6 +624,18 @@ window.MutationObserver = window.MutationObserver ||
           return node_unloaded(node);
       }
     };
+    parse_node_attrs = function(node) {
+      var attrHash, attribute, _i, _len, _ref;
+      attrHash = {};
+      if (node.attributes) {
+        _ref = node.attributes;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          attribute = _ref[_i];
+          attrHash[attribute.name] = smart_eval(attribute.value);
+        }
+      }
+      return attrHash;
+    };
     resolve_directives_in_classes = function(node) {
       var class_name, directive, directive_name, prefix, _i, _len, _ref, _results;
       _ref = node.classList || (node.className && node.className.split(" ")) || [];
@@ -644,7 +656,8 @@ window.MutationObserver = window.MutationObserver ||
                 prefix = _ref1[_j];
                 if (class_name.toLowerCase() === (prefix + directive_name)) {
                   _results2.push({
-                    directive: directive
+                    directive: directive,
+                    type: 'class'
                   });
                 }
               }
@@ -679,7 +692,8 @@ window.MutationObserver = window.MutationObserver ||
                     _results2.push({
                       directive: directive,
                       attribute_name: attribute.name.toLowerCase(),
-                      attribute: attribute.value
+                      attribute: attribute.value,
+                      type: 'attribute'
                     });
                   }
                 }
@@ -710,15 +724,9 @@ window.MutationObserver = window.MutationObserver ||
             if (node.tagName.toLowerCase() === (prefix + directive_name)) {
               _results1.push({
                 directive: directive,
-                attribute: node.attributes["do"](function(attrList) {
-                  var attrHash, attribute, _j, _len1;
-                  attrHash = {};
-                  for (_j = 0, _len1 = attrList.length; _j < _len1; _j++) {
-                    attribute = attrList[_j];
-                    attrHash[attribute.name] = smart_eval(attribute.value);
-                  }
-                  return attrHash;
-                })
+                type: 'tag',
+                attribute_name: node.tagName,
+                attribute: parse_node_attrs(node)
               });
             }
           }
@@ -735,7 +743,7 @@ window.MutationObserver = window.MutationObserver ||
       for (_i = 0, _len = instances.length; _i < _len; _i++) {
         instance = instances[_i];
         node.directives[instance.directive.name] = instance;
-        if (instance.attribute) {
+        if (instance.attribute_name) {
           node.directive_aliases[instance.attribute_name] = instance;
         }
       }
@@ -776,8 +784,11 @@ window.MutationObserver = window.MutationObserver ||
     node_altered = function(node, mutationRecord) {
       var node_directive_scope;
       if (node.directive_aliases) {
+        if (node.directives[node.tagName.toLowerCase()]) {
+          put_in_queue(node_directive_scope.directive.alter.bind(node_directive_scope, node, parse_node_attrs(node)));
+        }
         node_directive_scope = node.directive_aliases[mutationRecord.attributeName];
-        if (node_directive_scope && node_directive_scope.attribute && node_directive_scope.directive.alter && node_directive_scope.attribute !== node.attributes.getNamedItem(mutationRecord.attributeName).value) {
+        if (node_directive_scope && node_directive_scope.attribute && node_directive_scope.directive.alter) {
           return put_in_queue(node_directive_scope.directive.alter.bind(node_directive_scope, node, smart_eval(node.attributes.getNamedItem(mutationRecord.attributeName).value)));
         }
       }

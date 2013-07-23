@@ -27,6 +27,10 @@ window.directive = do ->
       when "load" then node_loaded node
       when "unload" then node_unloaded node
 
+  parse_node_attrs = (node)->
+    attrHash = {}
+    attrHash[attribute.name] = smart_eval(attribute.value) for attribute in node.attributes if node.attributes
+    attrHash
 
   #resolvers section. New resolvers should be added here
   resolve_directives_in_classes = (node) ->
@@ -34,6 +38,7 @@ window.directive = do ->
       for own directive_name, directive of directives
         for prefix in config.prefixes when class_name.toLowerCase() is (prefix + directive_name)
           directive: directive
+          type: 'class'
 
   resolve_directives_in_attributes = (node) ->
     for attribute in node.attributes or [] when config.ignored_attributes.indexOf(attribute.name) is -1
@@ -42,17 +47,16 @@ window.directive = do ->
           directive: directive
           attribute_name:attribute.name.toLowerCase()
           attribute: attribute.value
+          type: 'attribute'
 
   resolve_directives_in_tag = (node) ->
     return [] unless node.tagName?
     for own directive_name, directive of directives
       for prefix in config.prefixes when node.tagName.toLowerCase() is (prefix + directive_name)
           directive: directive
-          attribute: node.attributes.do((attrList)->
-              attrHash = {}
-              attrHash[attribute.name] = smart_eval(attribute.value) for attribute in attrList
-              attrHash
-            )
+          type: 'tag'
+          attribute_name: node.tagName
+          attribute: parse_node_attrs node
 
   #events processor section. New processors should be added here
   node_loaded = (node) ->
@@ -65,7 +69,8 @@ window.directive = do ->
     .flatten()
     for instance in instances
       node.directives[instance.directive.name] = instance
-      node.directive_aliases[instance.attribute_name] = instance if instance.attribute
+      if instance.attribute_name
+        node.directive_aliases[instance.attribute_name] = instance
 
     for directive_name, node_directive of node.directives when not node[directive_name]?
       node[directive_name] =
@@ -81,8 +86,10 @@ window.directive = do ->
 
   node_altered = (node, mutationRecord) ->
     if node.directive_aliases
+      if node.directives[node.tagName.toLowerCase()]
+        put_in_queue node_directive_scope.directive.alter.bind(node_directive_scope, node, parse_node_attrs node)
       node_directive_scope = node.directive_aliases[mutationRecord.attributeName]
-      if node_directive_scope and node_directive_scope.attribute and node_directive_scope.directive.alter and node_directive_scope.attribute isnt node.attributes.getNamedItem(mutationRecord.attributeName).value #for tag directives working right due to bug: value stores all the attributes set, and value returns exact value, but every attr change should be considered, so it's working right now
+      if node_directive_scope and node_directive_scope.attribute and node_directive_scope.directive.alter
         put_in_queue node_directive_scope.directive.alter.bind(node_directive_scope, node, smart_eval(node.attributes.getNamedItem(mutationRecord.attributeName).value))
 
   #directive creation section
