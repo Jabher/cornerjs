@@ -7,14 +7,18 @@ Object::do = (processor)->
   return processor(this)
 
 window.directive = do ->
-  #configuration section. Free to modify
+  config =
+    prefixes: ["data-", "directive-", ""]
+    ignored_attributes: ["class", "href"]
+
+
   smart_eval = (content) ->
     output = content
     if typeof output == 'string'
       try output = eval(content)
       try output = eval("({" + content + "})")
     output
-  put_in_queue = (func) ->
+  put_in_queue = (func) ->     #mutationObserver sometimes not detecting html change events in callback itself
     setTimeout func, 0
   apply_directives_in_subtree = (action, node) ->
     #child directives should be initialised earlier then parent ones
@@ -22,6 +26,9 @@ window.directive = do ->
     switch action
       when "load" then node_loaded node
       when "unload" then node_unloaded node
+
+
+  #resolvers section. New resolvers should be added here
   resolve_directives_in_classes = (node) ->
     for class_name in node.classList or (node.className and node.className.split(" ")) or []
       for own directive_name, directive of directives
@@ -97,10 +104,6 @@ window.directive = do ->
         else
           apply_directives_in_subtree("load", addedNode) for addedNode in mutationRecord.addedNodes
           apply_directives_in_subtree("unload", removedNode) for removedNode in mutationRecord.removedNodes
-
-  config =
-    prefixes: ["data-", "directive-", ""]
-    ignored_attributes: ["class", "href"]
 
   directives = {}
   observer = new MutationObserver(observer_function)
