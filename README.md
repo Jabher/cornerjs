@@ -9,8 +9,8 @@ Easy to use directives engine, that gives you a super-ability just to put into t
 
 It's totally not about data-binding and models. It's about throwing away all the pieces of code that are not connected with anything else and depends only on their appearance in DOM three.
 
-It works in IE9+, latest FF, Chrome, Opera.
-IE8 will not be supported. Sorry guys, there were earlier builds that supported load event in ie8, but I'm not going to support browser that makes me feel myself losing freedom and making sources size 1.5 times bigger.
+It works in IE9+, latest FF, Safari, Chrome, Opera, Android 4+(no information about 3.0, not working in 2.3) etc. Feel free to report about browser support, especially I'll appreciate information about iOS support.
+IE and some other browsers are working over polyfill by Polymer brothers.
 
 How it works?
 
@@ -61,6 +61,8 @@ is equal to
 
 Load is called on event appearance in DOM three, unload - on removal, alter - on attribute change.
 'template_url' has priority over 'template', overwrite is condition if content should be replaced.
+
+if you initialise only {alter: } function, it automatically gets bind to load also. This is done to implement easily all the actions to be done on both load and alter, such as include directive
 
 Local scope contains following by default:
 {

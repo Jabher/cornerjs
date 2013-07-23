@@ -83,6 +83,7 @@ window.directive = do ->
     if directive instanceof Function
       directive =
         load: directive
+    directive.load = directive.alter unless directive.load?
     directive.name = name.toLowerCase()
     directives[directive.name] = directive
     node_loaded(document.body) if document.readyState is "complete"
