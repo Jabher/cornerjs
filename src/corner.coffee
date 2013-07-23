@@ -3,8 +3,9 @@ Array::flatten = ->
   a = a.concat(if element.flatten then element.flatten() else element) for element in @ when element?
   a
 
-Object::do = (processor)->
-  return processor(this)
+Object.defineProperty Object::, 'do',
+  get: (processor)->
+    processor(this)
 
 window.directive = do ->
   config =

@@ -32,6 +32,10 @@
 window.MutationObserver = window.MutationObserver ||
     window.WebKitMutationObserver ||
     (function () {
+        var DOMAttrModified = 'DOMAttrModified',
+            DOMCharacterDataModified = 'DOMCharacterDataModified',
+            DOMNodeInserted = 'DOMNodeInserted',
+            DOMNodeRemoved = 'DOMNodeRemoved';
 
         var registrationsTable = new SideTable();
 
@@ -382,16 +386,16 @@ window.MutationObserver = window.MutationObserver ||
             addListeners_: function (node) {
                 var options = this.options;
                 if (options.attributes)
-                    node.addEventListener('DOMAttrModified', this, true);
+                    node.addEventListener(DOMAttrModified, this, true);
 
                 if (options.characterData)
-                    node.addEventListener('DOMCharacterDataModified', this, true);
+                    node.addEventListener(DOMCharacterDataModified, this, true);
 
                 if (options.childList)
-                    node.addEventListener('DOMNodeInserted', this, true);
+                    node.addEventListener(DOMNodeInserted, this, true);
 
                 if (options.childList || options.subtree)
-                    node.addEventListener('DOMNodeRemoved', this, true);
+                    node.addEventListener(DOMNodeRemoved, this, true);
             },
 
             removeListeners: function () {
@@ -401,16 +405,16 @@ window.MutationObserver = window.MutationObserver ||
             removeListeners_: function (node) {
                 var options = this.options;
                 if (options.attributes)
-                    node.removeEventListener('DOMAttrModified', this, true);
+                    node.removeEventListener(DOMAttrModified, this, true);
 
                 if (options.characterData)
-                    node.removeEventListener('DOMCharacterDataModified', this, true);
+                    node.removeEventListener(DOMCharacterDataModified, this, true);
 
                 if (options.childList)
-                    node.removeEventListener('DOMNodeInserted', this, true);
+                    node.removeEventListener(DOMNodeInserted, this, true);
 
                 if (options.childList || options.subtree)
-                    node.removeEventListener('DOMNodeRemoved', this, true);
+                    node.removeEventListener(DOMNodeRemoved, this, true);
             },
 
             /**
@@ -462,7 +466,7 @@ window.MutationObserver = window.MutationObserver ||
                 e.stopImmediatePropagation();
 
                 switch (e.type) {
-                    case 'DOMAttrModified':
+                    case DOMAttrModified:
                         // http://dom.spec.whatwg.org/#concept-mo-queue-attributes
 
                         var name = e.attrName;
@@ -499,7 +503,7 @@ window.MutationObserver = window.MutationObserver ||
 
                         break;
 
-                    case 'DOMCharacterDataModified':
+                    case DOMCharacterDataModified:
                         // http://dom.spec.whatwg.org/#concept-mo-queue-characterdata
                         var target = e.target;
 
@@ -525,15 +529,15 @@ window.MutationObserver = window.MutationObserver ||
 
                         break;
 
-                    case 'DOMNodeRemoved':
+                    case DOMNodeRemoved:
                         this.addTransientObserver(e.target);
                     // Fall through.
-                    case 'DOMNodeInserted':
+                    case DOMNodeInserted:
                         // http://dom.spec.whatwg.org/#concept-mo-queue-childlist
                         var target = e.relatedNode;
                         var changedNode = e.target;
                         var addedNodes, removedNodes;
-                        if (e.type === 'DOMNodeInserted') {
+                        if (e.type === DOMNodeInserted) {
                             addedNodes = [changedNode];
                             removedNodes = [];
                         } else {
@@ -582,9 +586,11 @@ window.MutationObserver = window.MutationObserver ||
     return a;
   };
 
-  Object.prototype["do"] = function(processor) {
-    return processor(this);
-  };
+  Object.defineProperty(Object.prototype, 'do', {
+    get: function(processor) {
+      return processor(this);
+    }
+  });
 
   window.directive = (function() {
     var apply_directives_in_subtree, config, create_directive, directive_processor, directives, node_altered, node_loaded, node_unloaded, observer, observer_function, parse_node_attrs, put_in_queue, resolve_directives_in_attributes, resolve_directives_in_classes, resolve_directives_in_tag, shoot_observer, smart_eval;
