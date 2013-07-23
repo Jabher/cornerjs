@@ -1,11 +1,9 @@
-Array::flatten = ->
-  a = []
-  a = a.concat(if element.flatten then element.flatten() else element) for element in @ when element?
-  a
-
-Object.defineProperty Object::, 'do',
-  get: (processor)->
-    processor(this)
+Object.defineProperty Array::, 'flatten',
+  get: ->
+    ->
+      a = []
+      a = a.concat(if element.flatten then element.flatten() else element) for element in @ when element?
+      a
 
 window.directive = do ->
   config =

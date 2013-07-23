@@ -574,21 +574,19 @@ window.MutationObserver = window.MutationObserver ||
     })();;(function() {
   var __hasProp = {}.hasOwnProperty;
 
-  Array.prototype.flatten = function() {
-    var a, element, _i, _len;
-    a = [];
-    for (_i = 0, _len = this.length; _i < _len; _i++) {
-      element = this[_i];
-      if (element != null) {
-        a = a.concat(element.flatten ? element.flatten() : element);
-      }
-    }
-    return a;
-  };
-
-  Object.defineProperty(Object.prototype, 'do', {
-    get: function(processor) {
-      return processor(this);
+  Object.defineProperty(Array.prototype, 'flatten', {
+    get: function() {
+      return function() {
+        var a, element, _i, _len;
+        a = [];
+        for (_i = 0, _len = this.length; _i < _len; _i++) {
+          element = this[_i];
+          if (element != null) {
+            a = a.concat(element.flatten ? element.flatten() : element);
+          }
+        }
+        return a;
+      };
     }
   });
 
