@@ -588,6 +588,10 @@ window.MutationObserver = window.MutationObserver ||
 
   window.directive = (function() {
     var apply_directives_in_subtree, config, create_directive, directive_processor, directives, node_altered, node_loaded, node_unloaded, observer, observer_function, put_in_queue, resolve_directives_in_attributes, resolve_directives_in_classes, resolve_directives_in_tag, shoot_observer, smart_eval;
+    config = {
+      prefixes: ["data-", "directive-", ""],
+      ignored_attributes: ["class", "href"]
+    };
     smart_eval = function(content) {
       var output;
       output = content;
@@ -773,7 +777,7 @@ window.MutationObserver = window.MutationObserver ||
       var node_directive_scope;
       if (node.directive_aliases) {
         node_directive_scope = node.directive_aliases[mutationRecord.attributeName];
-        if (node_directive_scope && node_directive_scope.attribute && node_directive_scope.directive.alter) {
+        if (node_directive_scope && node_directive_scope.attribute && node_directive_scope.directive.alter && node_directive_scope.attribute !== node.attributes.getNamedItem(mutationRecord.attributeName).value) {
           return put_in_queue(node_directive_scope.directive.alter.bind(node_directive_scope, node, smart_eval(node.attributes.getNamedItem(mutationRecord.attributeName).value)));
         }
       }
@@ -783,6 +787,9 @@ window.MutationObserver = window.MutationObserver ||
         directive = {
           load: directive
         };
+      }
+      if (directive.load == null) {
+        directive.load = directive.alter;
       }
       directive.name = name.toLowerCase();
       directives[directive.name] = directive;
@@ -811,10 +818,6 @@ window.MutationObserver = window.MutationObserver ||
             return _results;
         }
       });
-    };
-    config = {
-      prefixes: ["data-", "directive-", ""],
-      ignored_attributes: ["class", "href"]
     };
     directives = {};
     observer = new MutationObserver(observer_function);
