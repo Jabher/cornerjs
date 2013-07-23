@@ -82,7 +82,7 @@ window.directive = do ->
   node_altered = (node, mutationRecord) ->
     if node.directive_aliases
       node_directive_scope = node.directive_aliases[mutationRecord.attributeName]
-      if node_directive_scope and node_directive_scope.attribute and node_directive_scope.directive.alter
+      if node_directive_scope and node_directive_scope.attribute and node_directive_scope.directive.alter and node_directive_scope.attribute isnt node.attributes.getNamedItem(mutationRecord.attributeName).value #for tag directives working right due to bug: value stores all the attributes set, and value returns exact value, but every attr change should be considered, so it's working right now
         put_in_queue node_directive_scope.directive.alter.bind(node_directive_scope, node, smart_eval(node.attributes.getNamedItem(mutationRecord.attributeName).value))
 
   #directive creation section
