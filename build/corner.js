@@ -789,11 +789,12 @@ window.MutationObserver = window.MutationObserver ||
       var node_directive_scope;
       if (node.directive_aliases) {
         if (node.directives[node.tagName.toLowerCase()]) {
-          put_in_queue(node_directive_scope.directive.alter.bind(node_directive_scope, node, parse_node_attrs(node)));
+          node_directive_scope = node.directive_aliases[node.tagName.toLowerCase()];
+          put_in_queue(node_directive_scope.directive.alter.bind(node[node_directive_scope.directive.name], node, parse_node_attrs(node)));
         }
         node_directive_scope = node.directive_aliases[mutationRecord.attributeName];
         if (node_directive_scope && node_directive_scope.attribute && node_directive_scope.directive.alter) {
-          return put_in_queue(node_directive_scope.directive.alter.bind(node_directive_scope, node, smart_eval(node.attributes.getNamedItem(mutationRecord.attributeName).value)));
+          return put_in_queue(node_directive_scope.directive.alter.bind(node[node_directive_scope.directive.name], node, smart_eval(node.attributes.getNamedItem(mutationRecord.attributeName).value)));
         }
       }
     };
@@ -813,26 +814,34 @@ window.MutationObserver = window.MutationObserver ||
       }
     };
     observer_function = function(mutationRecords) {
-      return Array.prototype.forEach.call(mutationRecords, function(mutationRecord) {
-        var addedNode, removedNode, _i, _j, _len, _len1, _ref, _ref1, _results;
+      var addedNode, mutationRecord, removedNode, _i, _j, _len, _len1, _ref, _results;
+      _results = [];
+      for (_i = 0, _len = mutationRecords.length; _i < _len; _i++) {
+        mutationRecord = mutationRecords[_i];
         switch (mutationRecord.type) {
           case "attributes":
-            return node_altered(mutationRecord.target, mutationRecord);
+            node_altered(mutationRecord.target, mutationRecord);
+            _results.push(node_loaded(mutationRecord.target));
+            break;
           default:
             _ref = mutationRecord.addedNodes;
-            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-              addedNode = _ref[_i];
+            for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+              addedNode = _ref[_j];
               apply_directives_in_subtree("load", addedNode);
             }
-            _ref1 = mutationRecord.removedNodes;
-            _results = [];
-            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-              removedNode = _ref1[_j];
-              _results.push(apply_directives_in_subtree("unload", removedNode));
-            }
-            return _results;
+            _results.push((function() {
+              var _k, _len2, _ref1, _results1;
+              _ref1 = mutationRecord.removedNodes;
+              _results1 = [];
+              for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
+                removedNode = _ref1[_k];
+                _results1.push(apply_directives_in_subtree("unload", removedNode));
+              }
+              return _results1;
+            })());
         }
-      });
+      }
+      return _results;
     };
     directives = {};
     observer = new MutationObserver(observer_function);

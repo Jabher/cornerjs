@@ -86,10 +86,12 @@ window.directive = do ->
   node_altered = (node, mutationRecord) ->
     if node.directive_aliases
       if node.directives[node.tagName.toLowerCase()]
-        put_in_queue node_directive_scope.directive.alter.bind(node_directive_scope, node, parse_node_attrs node)
+        node_directive_scope = node.directive_aliases[node.tagName.toLowerCase()]
+        put_in_queue node_directive_scope.directive.alter.bind(node[node_directive_scope.directive.name], node, parse_node_attrs node)
       node_directive_scope = node.directive_aliases[mutationRecord.attributeName]
       if node_directive_scope and node_directive_scope.attribute and node_directive_scope.directive.alter
-        put_in_queue node_directive_scope.directive.alter.bind(node_directive_scope, node, smart_eval(node.attributes.getNamedItem(mutationRecord.attributeName).value))
+        put_in_queue node_directive_scope.directive.alter.bind(node[node_directive_scope.directive.name], node, smart_eval(node.attributes.getNamedItem(mutationRecord.attributeName).value))
+
 
   #directive creation section
   create_directive = (name, directive) ->
@@ -104,9 +106,11 @@ window.directive = do ->
 
   #observer shooter
   observer_function = (mutationRecords) ->
-    Array::forEach.call mutationRecords, (mutationRecord) ->
+    for mutationRecord in mutationRecords
       switch mutationRecord.type
-        when "attributes" then node_altered mutationRecord.target, mutationRecord
+        when "attributes"
+          node_altered mutationRecord.target, mutationRecord
+          node_loaded mutationRecord.target
         else
           apply_directives_in_subtree("load", addedNode) for addedNode in mutationRecord.addedNodes
           apply_directives_in_subtree("unload", removedNode) for removedNode in mutationRecord.removedNodes
