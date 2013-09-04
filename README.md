@@ -7,7 +7,7 @@ Easy to use directives engine, that gives you a super-ability just to put into t
  - on-element-appear actions
  - custom scrolls
 
-It's totally not about data-binding and models. It's about throwing away all the pieces of code that are not connected with anything else and depends only on their appearance in DOM three.
+It's totally not about data-binding and models. It's about throwing away all the pieces of code that are not connected with anything else and depends only on their appearance in DOM thee.
 
 It works in IE9+, latest FF, Safari, Chrome, Opera, Android 4+(no information about 3.0, not working in 2.3) etc. Feel free to report about browser support, especially I'll appreciate information about iOS support.
 IE and some other browsers are working over polyfill by Polymer brothers.
