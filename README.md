@@ -59,7 +59,7 @@ is equal to
             load: function(node, attribute){}
         })
 
-Load is called on event appearance in DOM three, unload - on removal, alter - on attribute change.
+Load is called on event appearance in DOM tree, unload - on removal, alter - on attribute change.
 'template_url' has priority over 'template', overwrite is condition if content should be replaced.
 
 if you initialise only {alter: } function, it automatically gets bind to load also. This is done to implement easily all the actions to be done on both load and alter, such as include directive
@@ -128,7 +128,7 @@ If you are using jQuery just use $('#selector')[0] to get access to original nod
 - IE 8 support(polyfills fix). Partially done: 'load' event is supported
 - Speed tests
 - Re-writing weakMap polyfill
-- Bringing 'directives' and 'directive_aliaces' from nodes to weakMap so that no tech data will be available in DOM three
+- Bringing 'directives' and 'directive_aliaces' from nodes to weakMap so that no tech data will be available in DOM tree
 
 
 
