@@ -1,4 +1,4 @@
-(function(success_callback, max_file_size, fail_callback){
+function register_dragndrop_upload(success_callback, max_file_size, fail_callback){
     directive('uploader', function (node) {
         function addClass(node, className){
             var classList = node.className.split(' ').filter(function(value){if (value.length > 0) return value});
@@ -29,7 +29,7 @@
                 e.preventDefault();
                 removeClass(node, 'dragover');
 
-                Array.prototype.forEach.call(e.originalEvent.dataTransfer.files, function (file) {
+                Array.prototype.forEach.call(e.dataTransfer.files, function (file) {
                     if (!max_file_size || (file.size <= max_file_size)) {
                         if (success_callback) success_callback(file)
                     } else {
@@ -41,10 +41,17 @@
             }, false);
         }
     })
-})(function(file){
+}
+
+
+register_dragndrop_upload(function(file){
     var reader = new FileReader();
     reader.onload = function (event) {
-        console.log(event.currentTarget.result)
+        if (event.target.result.indexOf('data:image') == 0) {
+            document.body.insertAdjacentHTML('beforeend', '<img src="'+event.target.result+'"/>')
+        } else {
+            document.body.insertAdjacentHTML('beforeend', '<p>It\'s not a pic :(</p>')
+        }
     };
     reader.readAsDataURL(file);
 }, 5 * 1024 * 1024);

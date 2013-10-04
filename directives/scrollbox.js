@@ -41,42 +41,45 @@ directive('scrollbox', function (node, options) {
     var wheelCallback = function (event) {
         event.preventDefault();
         var e = event.originalEvent || event,
-            wheelDelta = e.wheelDelta || (-e.detail);
-        if (window.opera) {
-            wheelDelta = -wheelDelta
-        }
-        if (wheelDelta < 0) {
-            wheelDelta = Math.max(wheelDelta, -3)
-        } else {
-            wheelDelta = Math.min(wheelDelta, 3)
-        }
-        scrollAction(wheelDelta * 6);
-        return false
+            wheelDelta = e.wheelDelta || - e.deltaY;
+        if (window.opera) {wheelDelta = -wheelDelta;}
+        scrollAction(wheelDelta);
+        return false;
     };
-
-    node.addEventListener('mousewheel', wheelCallback);
-    node.addEventListener('DOMMouseScroll', wheelCallback);
+    if ('onmousewheel' in window) {
+        contentHolder.addEventListener('mousewheel', wheelCallback);
+    } else {
+        contentHolder.addEventListener('wheel', wheelCallback);
+    }
 
 
     scrollbar.addEventListener('mousedown', function (initEvent) {
         node.style.webkitUserSelect = node.style.mozUserSelect = node.style.msUserSelect = 'none';
         document.body.style.setProperty('cursor', 'pointer', 'important');
         var currentY = initEvent.screenY;
-        var moveAction = function (event) {
-            scrollAction(currentY - event.screenY);
-            currentY = event.screenY;
-        };
 
         window.addEventListener('mousemove', moveAction, false);
-        var detachMoveAction = function () {
+        window.addEventListener('blur', detachMoveAction);
+        window.addEventListener('mouseup', detachMoveAction);
+
+        function moveAction(event) {
+            var contentHeight = contentHolder.offsetHeight,
+                containerHeight = node.clientHeight,
+                barHeight = containerHeight * (Math.min(containerHeight / contentHeight, 1)),
+                scrollOffset = currentY - event.screenY,
+                relOffset = scrollOffset / containerHeight;
+
+            scrollAction(contentHeight * relOffset);
+            currentY = event.screenY;
+        }
+
+        function detachMoveAction() {
             node.style.webkitUserSelect = node.style.mozUserSelect = node.style.msUserSelect = '';
             document.body.style.cursor = '';
             window.removeEventListener('mousemove', moveAction);
             window.removeEventListener('blur', detachMoveAction);
             window.removeEventListener('mouseup', detachMoveAction);
-        };
-        window.addEventListener('blur', detachMoveAction);
-        window.addEventListener('mouseup', detachMoveAction);
+        }
     }, false);
     scrollAction(0);
 });
