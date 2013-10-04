@@ -7,7 +7,7 @@ Easy to use directives engine, that gives you a super-ability just to put into t
  - on-element-appear actions
  - custom scrolls
 
-It's totally not about data-binding and models. It's about throwing away all the pieces of code that are not connected with anything else and depends only on their appearance in DOM three.
+It's totally not about data-binding and models. It's about throwing away all the pieces of code that are not connected with anything else and depends only on their appearance in DOM tree.
 
 It works in IE9+, latest FF, Safari, Chrome, Opera, Android 4+(no information about 3.0, not working in 2.3) etc. Feel free to report about browser support, especially I'll appreciate information about iOS support.
 IE and some other browsers are working over polyfill by Polymer brothers.
@@ -59,7 +59,7 @@ is equal to
             load: function(node, attribute){}
         })
 
-Load is called on event appearance in DOM three, unload - on removal, alter - on attribute change.
+Load is called on event appearance in DOM tree, unload - on removal, alter - on attribute change.
 'template_url' has priority over 'template', overwrite is condition if content should be replaced.
 
 if you initialise only {alter: } function, it automatically gets bind to load also. This is done to implement easily all the actions to be done on both load and alter, such as include directive
@@ -125,39 +125,5 @@ If you are using jQuery just use $('#selector')[0] to get access to original nod
 
 ## Plans for future
 
-- IE 8 support(polyfills fix). Partially done: 'load' event is supported
+- Fixing directive attribute/class removal from the element: now "load" event is triggered when you add directive to the node, but "unload" is always triggered on node removal, not directive removal. It is big task due to the implementation of workwlow.
 - Speed tests
-- Re-writing weakMap polyfill
-- Bringing 'directives' and 'directive_aliaces' from nodes to weakMap so that no tech data will be available in DOM three
-
-
-
-
-
-
-
-
-
-
-
-
-directiveObserver interface is build to be similiar to mutationObserver one as it is kind of proxy to it.
-observer is created by
-    DirectiveObserver(
-        [optional] function constructionCallback,
-        [optional] function destructionCallback,
-        [optional] function alterCallback
-    )
-or
-  DirectiveObserver(
-          directiveObserverInit callbacks
-      )
-with following fields:
-*load(as creationCallback)
-*unload(as destructionCallback)
-*alter(as alterCallback)
-and registred by
-    void observe(
-      Node target,
-      MutationObserverInit options
-    );
