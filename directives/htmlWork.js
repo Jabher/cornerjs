@@ -61,8 +61,10 @@ directive('repeat', {
         }, unload: function (node) {
             if (!node.sourceNode) {
                 node.className = node.className.replace(' repeatOperator', '');
-                node.style.display = void 0;
+                node.style.display = 'block';
                 this.fillWithClones(0);
+            } else {
+                node.sourceNode.attributes.removeNamedItem('repeat');
             }
         }
     }

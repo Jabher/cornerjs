@@ -4,7 +4,6 @@ window['directive'] = (function () {
     var prefixList = ['data-', 'directive-', ''];
     var directiveAliasList = {};
     var directives = {};
-    var indexTarget = document.body;//or document.documentElement
 
     function uniq(array){
         return array.filter(function (a, b, c) {
@@ -253,13 +252,13 @@ window['directive'] = (function () {
             for (var i = 0; i < mutationRecordList.length; i++) {
                 mutationRecordProcessor(mutationRecordList[i]);
             }
-        })).observe(indexTarget, {
+        })).observe(document.body, {
                 childList: true,
                 attributes: true,
                 subtree: true,
                 attributeOldValue: true
             });
-        nodeListAdded([indexTarget]);
+        nodeListAdded([document.body]);
         oberverLaunched = true;
     });
 
@@ -290,21 +289,21 @@ window['directive'] = (function () {
         directives[name] = directive;
         if (oberverLaunched) {
             aliases.forEach(function (className) {
-                var nodes = indexTarget.querySelectorAll('.' + className) || [];
+                var nodes = document.body.querySelectorAll('.' + className) || [];
                 for (var i = 0; i < nodes.length; i++) {
                     var node = nodes[i];
                     classAdded(node, className)
                 }
             });
             aliases.forEach(function (attrName) {
-                var nodes = indexTarget.querySelectorAll('[' + attrName + ']') || [];
+                var nodes = document.body.querySelectorAll('[' + attrName + ']') || [];
                 for (var i = 0; i < nodes.length; i++) {
                     var node = nodes[i];
                     attributeAdded(node, attrName)
                 }
             });
             aliases.forEach(function (tagName) {
-                var nodes = indexTarget.querySelectorAll(tagName) || [];
+                var nodes = document.body.querySelectorAll(tagName) || [];
                 for (var i = 0; i < nodes.length; i++) {
                     var node = nodes[i];
                     nodeAdded(node)
