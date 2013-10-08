@@ -65,7 +65,6 @@ directive('scrollbox', function (node, options) {
         function moveAction(event) {
             var contentHeight = contentHolder.offsetHeight,
                 containerHeight = node.clientHeight,
-                barHeight = containerHeight * (Math.min(containerHeight / contentHeight, 1)),
                 scrollOffset = currentY - event.screenY,
                 relOffset = scrollOffset / containerHeight;
 
