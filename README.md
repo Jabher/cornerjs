@@ -59,7 +59,7 @@ is equal to
             load: function(node, attribute){}
         })
 
-Load is called on event appearance in DOM tree, unload - on removal, alter - on attribute change.
+Load is called on event appearance in DOM three, unload - on removal, alter - on attribute change.
 'template_url' has priority over 'template', overwrite is condition if content should be replaced.
 
 if you initialise only {alter: } function, it automatically gets bind to load also. This is done to implement easily all the actions to be done on both load and alter, such as include directive
@@ -125,5 +125,4 @@ If you are using jQuery just use $('#selector')[0] to get access to original nod
 
 ## Plans for future
 
-- Fixing directive attribute/class removal from the element: now "load" event is triggered when you add directive to the node, but "unload" is always triggered on node removal, not directive removal. It is big task due to the implementation of workwlow.
 - Speed tests
