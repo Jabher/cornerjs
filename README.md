@@ -123,6 +123,9 @@ I strongly recommend to leave config in the beginning as-is or at least leave "d
 If you are using jQuery just use $('#selector')[0] to get access to original node
 
 
+##Current bugs
+IE 9 and 10 do not support attribute removal from the node. It is allegedly connected with mutationobserver polyfill, and is uncommon situation(usually it is done by hands rather by manipulating DOM), so it should be just taken in mind that it is recommended to remove node, not attribute directive. Otherwise you can use class and tag directives.
+
 ## Plans for future
 
 - Speed tests
