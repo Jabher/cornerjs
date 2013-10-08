@@ -571,345 +571,320 @@ window.MutationObserver = window.MutationObserver ||
         };
 
         return JsMutationObserver;
-    })();;(function() {
-  (function() {
-    var Directive, WeakMap, addedNodesDirectiveHandler, addedNodesHandler, config, directiveList, mutationRecordHandler, mutationRecordListHandler, observer, observerLaunched, removedNodesHandler, shootObserver, smartEval;
-    config = {
-      prefixes: ['data-', 'directive-', '']
-    };
-    WeakMap = function() {
-      var keyList, valueList;
-      keyList = [];
-      valueList = [];
-      return Object.freeze({
-        get: function(key, defaultValue) {
-          var index, value;
-          index = keyList.indexOf(key);
-          value = valueList[index];
-          if (index === -1) {
-            return defaultValue;
-          } else {
-            return value;
-          }
-        },
-        has: function(key) {
-          var index;
-          index = keyList.indexOf(key);
-          return index !== -1;
-        },
-        set: function(key, value) {
-          var index;
-          if (key !== Object(key)) {
-            throw new TypeError("WeakMap key must not be a value type");
-          }
-          index = keyList.indexOf(key);
-          if (index === -1) {
-            keyList.push(key);
-            return valueList.push(value);
-          } else {
-            return valueList[index] = value;
-          }
-        },
-        "delete": function(key) {
-          var index;
-          index = keyList.indexOf(key);
-          keyList = keyList.slice(0, index).concat(keyList.slice(index + 1));
-          return valueList = valueList.slice(0, index).concat(valueList.slice(index + 1));
-        },
-        clear: function() {
-          keyList = [];
-          return valueList = [];
-        }
-      });
-    };
-    smartEval = function(content) {
-      var output;
-      output = content;
-      try {
-        output = eval(content);
-      } catch (_error) {}
-      try {
-        output = eval("({" + content + "})");
-      } catch (_error) {}
-      return output;
-    };
-    directiveList = [];
-    addedNodesDirectiveHandler = function(nodeList, directive) {
-      var node, _i, _j, _len, _len1, _results;
-      for (_i = 0, _len = nodeList.length; _i < _len; _i++) {
-        node = nodeList[_i];
-        directive.checkNode(node);
-      }
-      _results = [];
-      for (_j = 0, _len1 = nodeList.length; _j < _len1; _j++) {
-        node = nodeList[_j];
-        if (node.children) {
-          _results.push(addedNodesDirectiveHandler(node.children, directive));
-        }
-      }
-      return _results;
-    };
-    Directive = (function() {
-      function Directive(directiveName, onLoad, onUnload, onAlter) {
-        var _this = this;
-        this.directiveName = directiveName;
-        this.onLoad = onLoad;
-        this.onUnload = onUnload;
-        this.onAlter = onAlter;
-        this.name = this.directiveName.toLowerCase();
-        this.directiveName = this.directiveName.replace(/^./, function(a) {
-          return a.toUpperCase();
+    })();;
+window.directive = (function () {
+    "use strict";
+    var ignoredAttributes = ['id', 'href', 'style', 'class', 'src'];
+    var prefixList = ['data-', 'directive-', ''];
+    var directiveAliasList = {};
+    var directives = {};
+    var indexTarget = document.body;//or document.documentElement
+
+    function uniq(array){
+        return array.filter(function (a, b, c) {
+            return c.indexOf(a, b + 1) === -1
         });
-        console.log(this.directiveName);
-        this.nodeMap = new WeakMap;
-        this.aliases = config.prefixes.map(function(prefix) {
-          return prefix + _this.name;
-        });
-        if (observerLaunched) {
-          Array.prototype.forEach.call(document.querySelectorAll([
-            this.aliases.map(function(a) {
-              return a;
-            }).join(' , '), this.aliases.map(function(a) {
-              return '.' + a;
-            }).join(' , '), this.aliases.map(function(a) {
-              return '[' + a + ']';
-            }).join(' , ')
-          ].join(' , ')), function(node) {
-            return this.testNode(node);
-          });
-        }
-      }
-
-      Directive.prototype.getTagAttributesValue = function(node) {
-        var argsObject, attribute, _i, _len, _ref;
-        argsObject = {};
-        _ref = node.attributes;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          attribute = _ref[_i];
-          argsObject[attribute.name] = smartEval(attribute.value);
-        }
-        return argsObject;
-      };
-
-      Directive.prototype.getAttributeValue = function(attribute) {
-        return smartEval(attribute.value);
-      };
-
-      Directive.prototype.executeDirectiveAction = function(node, state, action) {
-        if (action) {
-          switch (state.type) {
-            case 'attribute':
-              if (state.attribute.value !== state.attributeValue) {
-                state.attributeValue = state.attribute.value;
-                return action.call(state.scope, node, this.getAttributeValue(state.attribute));
-              }
-              break;
-            case 'tag':
-              return action.call(state.scope, node, this.getTagAttributesValue(node));
-            case 'class':
-              return action.call(state.scope, node);
-          }
-        }
-      };
-
-      Directive.prototype.directiveLoaded = function(node, state) {
-        node['directive' + this.directiveName] = state.scope = {};
-        return this.executeDirectiveAction(node, state, this.onLoad);
-      };
-
-      Directive.prototype.directiveAttributeAltered = function(node, state) {
-        if (this.testNode(node)) {
-          return this.executeDirectiveAction(node, state, this.onAlter);
-        } else {
-          return this.directiveUnloaded(node, state);
-        }
-      };
-
-      Directive.prototype.directiveUnloaded = function(node, state) {
-        return this.onUnload(state.scope, node);
-      };
-
-      Directive.prototype.testNode = function(node) {
-        var alias, classList, _i, _len, _ref;
-        if (node.tagName && node.attributes) {
-          classList = (node.className || '').split(' ').filter(function(a) {
-            return a.length;
-          }).map(function(a) {
-            return a.toLowerCase();
-          });
-          _ref = this.aliases;
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            alias = _ref[_i];
-            if (classList.indexOf(alias) !== -1) {
-              return {
-                type: 'class',
-                className: alias
-              };
-            }
-            if (node.attributes.getNamedItem(alias)) {
-              return {
-                type: 'attribute',
-                attributeName: alias,
-                attribute: node.attributes.getNamedItem(alias)
-              };
-            }
-            if (node.tagName.toLowerCase() === alias) {
-              return {
-                type: 'tag',
-                tagName: alias,
-                tag: node
-              };
-            }
-          }
-        }
-      };
-
-      Directive.prototype.registerClass = function(node, state) {
-        var _this = this;
-        state.observer = new MutationObserver(function() {
-          if (!_this.testNode(node)) {
-            return _this.directiveUnloaded(node, state);
-          }
-        });
-        state.observer.observe(node, {
-          attributes: true
-        });
-        return this.directiveLoaded(node, state);
-      };
-
-      Directive.prototype.registerAttribute = function(node, state) {
-        var _this = this;
-        state.observer = new MutationObserver(function() {
-          return _this.directiveAttributeAltered(node, state);
-        });
-        state.observer.observe(node, {
-          attributes: true
-        });
-        return this.directiveLoaded(node, state);
-      };
-
-      Directive.prototype.registerTag = function(node, state) {
-        var _this = this;
-        state.observer = new MutationObserver(function() {
-          return _this.directiveAttributeAltered(node, state);
-        });
-        state.observer.observe(node, {
-          attributes: true
-        });
-        return this.directiveLoaded(node, state);
-      };
-
-      Directive.prototype.checkNode = function(node) {
-        var state;
-        if (!this.nodeMap.has(node)) {
-          state = this.testNode(node);
-          if (state) {
-            this.nodeMap.set(node, state);
-            switch (state.type) {
-              case 'tag':
-                return this.registerTag(node, state);
-              case 'attribute':
-                return this.registerAttribute(node, state);
-              case 'class':
-                return this.registerClass(node, state);
-            }
-          }
-        }
-      };
-
-      Directive.prototype.checkRemovingNode = function(node) {
-        var state;
-        if (state = this.nodeMap.get(node)) {
-          return this.directiveUnloaded(node, state);
-        }
-      };
-
-      return Directive;
-
-    })();
-    addedNodesHandler = function(nodeList) {
-      var directive, node, _i, _j, _k, _len, _len1, _len2, _results;
-      for (_i = 0, _len = nodeList.length; _i < _len; _i++) {
-        node = nodeList[_i];
-        for (_j = 0, _len1 = directiveList.length; _j < _len1; _j++) {
-          directive = directiveList[_j];
-          directive.checkNode(node);
-        }
-      }
-      _results = [];
-      for (_k = 0, _len2 = nodeList.length; _k < _len2; _k++) {
-        node = nodeList[_k];
-        if (node.children) {
-          _results.push(addedNodesHandler(node.children));
-        }
-      }
-      return _results;
-    };
-    removedNodesHandler = function(nodeList) {
-      var directive, node, _i, _j, _k, _len, _len1, _len2, _results;
-      for (_i = 0, _len = nodeList.length; _i < _len; _i++) {
-        node = nodeList[_i];
-        for (_j = 0, _len1 = directiveList.length; _j < _len1; _j++) {
-          directive = directiveList[_j];
-          directive.checkRemovingNode(node);
-        }
-      }
-      _results = [];
-      for (_k = 0, _len2 = nodeList.length; _k < _len2; _k++) {
-        node = nodeList[_k];
-        if (node.children) {
-          _results.push(removedNodesHandler(node.children));
-        }
-      }
-      return _results;
-    };
-    mutationRecordHandler = function(mutationRecord) {
-      switch (mutationRecord.type) {
-        case 'childList':
-          addedNodesHandler(mutationRecord.addedNodes);
-          return removedNodesHandler(mutationRecord.removedNodes);
-      }
-    };
-    mutationRecordListHandler = function(mutationRecordList) {
-      var mutationRecord, _i, _len, _results;
-      _results = [];
-      for (_i = 0, _len = mutationRecordList.length; _i < _len; _i++) {
-        mutationRecord = mutationRecordList[_i];
-        _results.push(mutationRecordHandler(mutationRecord));
-      }
-      return _results;
-    };
-    observer = new MutationObserver(mutationRecordListHandler);
-    observerLaunched = false;
-    shootObserver = function() {
-      mutationRecordListHandler([
-        {
-          addedNodes: [document.body],
-          removedNodes: [],
-          target: document.body
-        }
-      ]);
-      observer.observe(document.body, {
-        attributes: true,
-        childList: true,
-        subtree: true
-      });
-      return observerLaunched = true;
-    };
-    if (document.readyState === "complete") {
-      shootObserver();
-    } else {
-      document.addEventListener("DOMContentLoaded", shootObserver.bind(document.body), false);
     }
-    return window.directive = function(name, config) {
-      if (config instanceof Function) {
-        config = {
-          load: config
-        };
-      }
-      directiveList.push(new Directive(name, config.load || config.alter, config.unload, config.alter));
-      return void 0;
-    };
-  })();
 
-}).call(this);
+    function getScopeName(directive) {
+        return 'directive' + directive.name.replace(/^./, function (s) {
+            return s.toUpperCase()
+        });
+    }
+
+    function smartEval(value) {
+        try {
+            value = eval('({' + value + '})')
+        } catch (e) {
+            try {
+                value = eval('(' + value + ')')
+            } catch (e) {
+            }
+        }
+        return value
+    }
+
+    function getAttributesObject(node) {
+        var object = {};
+        for (var i = 0; i < node.attributes.length; i++) {
+            var attribute = node.attributes[i];
+            object[attribute.name] = smartEval(attribute.value);
+        }
+        return object;
+    }
+
+    function directiveLoadedAction(node, directive, attributeValue) {
+        var directiveScopeName = getScopeName(directive);
+        if (!node[directiveScopeName]) {
+            var scope = node[directiveScopeName] = {};
+            if (directive.onLoad) {
+                directive.onLoad.call(scope, node, attributeValue)
+            }
+        }
+    }
+
+    function directiveAlteredAction(node, directive, attributeValue) {
+        var directiveScopeName = getScopeName(directive);
+        if (node[directiveScopeName]) {
+            if (directive.onAlter) {
+                directive.onAlter.call(node[directiveScopeName], node, attributeValue)
+            }
+        }
+    }
+
+    function directiveRemovedAction(node, directive, attributeValue) {
+        var directiveScopeName = getScopeName(directive);
+        if (node[directiveScopeName]) {
+            if (directive.onUnload) {
+                directive.onUnload.call(node[directiveScopeName], node, attributeValue);
+            }
+            node[directiveScopeName] = void 0
+        }
+    }
+
+    function classAdded(node, className) {
+        var directive = directiveAliasList[className.toLowerCase()];
+        if (directive) {
+            directiveLoadedAction(node, directive);
+        }
+    }
+
+    function classRemoved(node, className) {
+        var directive = directiveAliasList[className.toLowerCase()];
+        if (directive) {
+            directiveRemovedAction(node, directive);
+        }
+    }
+
+    function attributeAdded(node, attributeName) {
+        var directive = directiveAliasList[attributeName.toLowerCase()];
+        if (directive) {
+            directiveLoadedAction(node, directive, smartEval(node.attributes[attributeName].value));
+        }
+    }
+
+    function attributeRemoved(node, attributeName) {
+        var directive = directiveAliasList[attributeName.toLowerCase()];
+        if (directive) {
+            directiveRemovedAction(node, directive);
+        }
+    }
+
+    function attributeChanged(node, attributeName) {
+        var directive = directiveAliasList[attributeName.toLowerCase()];
+        if (directive) {
+            directiveAlteredAction(node, directive, smartEval(node.attributes[attributeName].value));
+        }
+    }
+
+    function nodeAdded(node) {
+        var directive = directiveAliasList[ node.tagName.toLowerCase() ];
+        if (directive) {
+            node.addEventListener('attributeChanged', function () {
+                directiveAlteredAction(node, directive, getAttributesObject(node))
+            });
+            directiveLoadedAction(node, directive, getAttributesObject(node))
+        }
+    }
+
+    function nodeRemoved(node) {
+        var directive = directiveAliasList[ node.tagName.toLowerCase() ];
+        if (directive) {
+            directiveLoadedAction(node, directive, getAttributesObject(node))
+        }
+    }
+
+
+    function nodeListAdded(nodeList) {
+        var i, j;
+        for (i = 0; i < nodeList.length; i++) {
+            var node = nodeList[i];
+            if (node.tagName) {
+                nodeAdded(node);
+            }
+            if (node.className) {
+                var classList = node.className.split(' ').filter(function (a) {
+                    return a.length
+                });
+                for (j = 0; j < classList.length; j++) {
+                    classAdded(node, classList[j]);
+                }
+            }
+            if (node.attributes) {
+                for (j = 0; j < node.attributes.length; j++) {
+                    if (ignoredAttributes.indexOf(node.attributes[j].name) === -1) {
+                        attributeAdded(node, node.attributes[j].name);
+                    }
+                }
+            }
+        }
+
+
+        for (i = 0; i < nodeList.length; i++) {
+            var node = nodeList[i];
+            for (i = 0; i < nodeList.length; i++) {
+                if (nodeList[i].children) {
+                    nodeListAdded(nodeList[i].children)
+                }
+            }
+        }
+    }
+
+    function nodeListRemoved(nodeList) {
+        var i, j;
+        for (i = 0; i < nodeList.length; i++) {
+            if (nodeList[i].children) {
+                nodeListRemoved(nodeList[i].children)
+            }
+        }
+        for (i = 0; i < nodeList.length; i++) {
+            var node = nodeList[i];
+            if (node.tagName) {
+                nodeRemoved(node);
+            }
+            if (node.className) {
+                var classList = node.className.split(' ').filter(function (a) {
+                    return a.length
+                });
+                for (j = 0; j < classList.length; j++) {
+                    classRemoved(node, classList[j]);
+                }
+            }
+            if (node.attributes) {
+                for (j = 0; j < node.attributes.length; j++) {
+                    if (ignoredAttributes.indexOf(node.attributes[j].name) === -1) {
+                        attributeRemoved(node, node.attributes[j].name);
+                    }
+                }
+            }
+        }
+
+    }
+
+    function classMutated(mutationRecord) {
+        var oldClassList = uniq((mutationRecord.oldValue || '').split(' ').filter(function (a) {
+                return a.length
+            })),
+            newClassList = uniq((mutationRecord.target.className || '').split(' ').filter(function (a) {
+                return a.length
+            })),
+            diff = {
+                removedList: oldClassList.filter(function (a) {
+                    return newClassList.indexOf(a) === -1
+                }),
+                addedList: newClassList.filter(function (a) {
+                    return oldClassList.indexOf(a) === -1
+                })
+            };
+        diff.removedList.forEach(function (removedClass) {
+            classRemoved(mutationRecord.target, removedClass)
+        });
+        diff.addedList.forEach(function (addedClass) {
+            classAdded(mutationRecord.target, addedClass)
+        });
+    }
+
+    function attributeMutated(mutationRecord) {
+        if (ignoredAttributes.indexOf(mutationRecord.attributeName) !== -1) {
+            return
+        }
+        mutationRecord.target.dispatchEvent(new Event('attributeChanged', {bubbles: false}));
+        if (mutationRecord.oldValue === null) {
+            attributeAdded(mutationRecord.target, mutationRecord.attributeName)
+        } else if (!mutationRecord.target.attributes[mutationRecord.attributeName]) {
+            attributeRemoved(mutationRecord.target, mutationRecord.attributeName)
+        } else {
+            attributeChanged(mutationRecord.target, mutationRecord.attributeName)
+        }
+    }
+
+    var oberverLaunched = false;
+
+    function mutationRecordProcessor(mutationRecord) {
+        switch (mutationRecord.type) {
+            case 'childList':
+                nodeListAdded(mutationRecord.addedNodes);
+                nodeListRemoved(mutationRecord.removedNodes);
+                break;
+            case 'attributes':
+                if (mutationRecord.attributeName === 'class') {
+                    classMutated(mutationRecord)
+                } else {
+                    attributeMutated(mutationRecord)
+                }
+                break;
+        }
+    }
+
+    (function (callback) {
+        if (document.readyState === 'complete') {
+            callback()
+        } else {
+            document.addEventListener('DOMContentLoaded', callback, false);
+        }
+    })(function () {
+        (new MutationObserver(function (mutationRecordList) {
+            for (var i = 0; i < mutationRecordList.length; i++) {
+                mutationRecordProcessor(mutationRecordList[i]);
+            }
+        })).observe(indexTarget, {
+                childList: true,
+                attributes: true,
+                subtree: true,
+                attributeOldValue: true
+            });
+        nodeListAdded([indexTarget]);
+        oberverLaunched = true;
+    });
+
+    var spaceRegex = /\s/;
+    return (function (name, options) {
+        if ((typeof name !== 'string') || spaceRegex.test(name)) {
+            throw new TypeError('Directive name should be a string without spaces')
+        }
+        name = name.toLowerCase();
+        if (typeof options === 'function') {
+            options = {load: options};
+        }
+        if (options.toString() !== "[object Object]") {
+            throw new TypeError('Directive config should be an common object')
+        }
+        var directive = {
+                name: name,
+                onLoad: options.load || options.alter,
+                onUnload: options.unload,
+                onAlter: options.alter
+            },
+            aliases = prefixList.map(function (p) {
+                return p + name
+            });
+        aliases.forEach(function (alias) {
+            directiveAliasList[alias] = directive;
+        });
+        directives[name] = directive;
+        if (oberverLaunched) {
+            aliases.forEach(function (className) {
+                var nodes = indexTarget.querySelectorAll('.' + className) || [];
+                for (var i = 0; i < nodes.length; i++) {
+                    var node = nodes[i];
+                    classAdded(node, className)
+                }
+            });
+            aliases.forEach(function (attrName) {
+                var nodes = indexTarget.querySelectorAll('[' + attrName + ']') || [];
+                for (var i = 0; i < nodes.length; i++) {
+                    var node = nodes[i];
+                    attributeAdded(node, attrName)
+                }
+            });
+            aliases.forEach(function (tagName) {
+                var nodes = indexTarget.querySelectorAll(tagName) || [];
+                for (var i = 0; i < nodes.length; i++) {
+                    var node = nodes[i];
+                    nodeAdded(node)
+                }
+            });
+        }
+        return name
+    }).bind(this);
+}).call(window);

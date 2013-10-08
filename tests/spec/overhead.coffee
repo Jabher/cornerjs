@@ -1,5 +1,5 @@
 describe "new unexpected scenarios", ->
-  it "support class directive attachment after node creation", ->
+  it "support class directive attachment after node creation(directive registred when node already exists)", ->
     directiveCalled = undefined
     directiveName = undefined
     directiveValue = undefined
@@ -9,7 +9,7 @@ describe "new unexpected scenarios", ->
     directiveCalled = false
     obtainedValue = undefined
     runs ->
-      directive directiveName, (node) ->
+      directive directiveName, ->
         directiveCalled = true
       $("<div></div>").appendTo(document.body).addClass(directiveName)
 
@@ -19,7 +19,7 @@ describe "new unexpected scenarios", ->
     runs ->
       expect(directiveCalled).toEqual true
 
-  it "support attribute directive attachment after node creation", ->
+  it "support attribute directive attachment after node creation(directive registred when node already exists)", ->
     directiveCalled = undefined
     directiveName = undefined
     directiveValue = undefined
@@ -41,6 +41,8 @@ describe "new unexpected scenarios", ->
       expect(obtainedValue).toEqual directiveValue
 
   it "shoot event on class removal", ->
+    window.logging = true
+
     directiveCallback = undefined
     directiveName = undefined
     directiveUnloaderCalled = undefined
@@ -62,7 +64,7 @@ describe "new unexpected scenarios", ->
         if $("." + directiveName).length > 0
           elementExists = true
           clearInterval someInterval
-      , 50)
+      , 150)
 
     waitsFor (->
       elementExists
