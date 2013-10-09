@@ -17,14 +17,15 @@ window['directive'] = (function () {
         });
     }
 
-    function smartEval(value) {
+    function smartValue(value) {
         try {
-            value = eval('({' + value + '})')
+            //value = eval('({' + value + '})')
+            value = JSON.parse('{' + value + '}');
         } catch (e) {
-            try {
-                value = eval('(' + value + ')')
-            } catch (e) {
-            }
+            //try {
+            //    value = eval('(' + value + ')')
+            //} catch (e) {
+            //}
         }
         return value
     }
@@ -33,7 +34,7 @@ window['directive'] = (function () {
         var object = {};
         for (var i = 0; i < node.attributes.length; i++) {
             var attribute = node.attributes[i];
-            object[attribute.name] = smartEval(attribute.value);
+            object[attribute.name] = smartValue(attribute.value);
         }
         return object;
     }
@@ -84,7 +85,7 @@ window['directive'] = (function () {
     function attributeAdded(node, attributeName) {
         var directive = directiveAliasList[attributeName.toLowerCase()];
         if (directive) {
-            directiveLoadedAction(node, directive, smartEval(node.attributes[attributeName].value));
+            directiveLoadedAction(node, directive, smartValue(node.attributes[attributeName].value));
         }
     }
 
@@ -98,7 +99,7 @@ window['directive'] = (function () {
     function attributeChanged(node, attributeName) {
         var directive = directiveAliasList[attributeName.toLowerCase()];
         if (directive) {
-            directiveAlteredAction(node, directive, smartEval(node.attributes[attributeName].value));
+            directiveAlteredAction(node, directive, smartValue(node.attributes[attributeName].value));
         }
     }
 
