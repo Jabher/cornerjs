@@ -5,7 +5,7 @@ window['directive'] = (function () {
     var directiveAliasList = {};
     var directives = {};
 
-    function uniq(array){
+    function uniq(array) {
         return array.filter(function (a, b, c) {
             return c.indexOf(a, b + 1) === -1
         });
@@ -43,7 +43,11 @@ window['directive'] = (function () {
         if (!node[directiveScopeName]) {
             var scope = node[directiveScopeName] = {};
             if (directive.onLoad) {
-                directive.onLoad.call(scope, node, attributeValue)
+                try {
+                    directive.onLoad.call(scope, node, attributeValue)
+                } catch (e) {
+                    console.error('directive ', directive.name, ' caused error ', e, ' on node ', node, ' load')
+                }
             }
         }
     }
@@ -52,7 +56,11 @@ window['directive'] = (function () {
         var directiveScopeName = getScopeName(directive);
         if (node[directiveScopeName]) {
             if (directive.onAlter) {
-                directive.onAlter.call(node[directiveScopeName], node, attributeValue)
+                try {
+                    directive.onAlter.call(node[directiveScopeName], node, attributeValue)
+                } catch (e) {
+                    console.error('directive ', directive.name, ' caused error ', e, ' on node ', node, ' alter')
+                }
             }
         }
     }
@@ -61,7 +69,11 @@ window['directive'] = (function () {
         var directiveScopeName = getScopeName(directive);
         if (node[directiveScopeName]) {
             if (directive.onUnload) {
-                directive.onUnload.call(node[directiveScopeName], node, attributeValue);
+                try {
+                    directive.onUnload.call(node[directiveScopeName], node, attributeValue);
+                } catch (e) {
+                    console.error('directive ', directive.name, ' caused error ', e, ' on node ', node, ' unload')
+                }
             }
             node[directiveScopeName] = void 0
         }
