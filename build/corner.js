@@ -601,6 +601,15 @@ window.MutationObserver = window.MutationObserver ||
         }
         return value
     }
+    function execute(fun){
+        try {
+            fun()
+        } catch (e) {
+            setTimeout(function(){
+               throw e
+            });
+        }
+    }
 
     function getAttributesObject(node) {
         var object = {};
@@ -616,11 +625,9 @@ window.MutationObserver = window.MutationObserver ||
         if (!node[directiveScopeName]) {
             var scope = node[directiveScopeName] = {};
             if (directive.onLoad) {
-                try {
+                execute(function(){
                     directive.onLoad.call(scope, node, attributeValue)
-                } catch (e) {
-                    console.error('directive ', directive.name, ' caused error ', e, ' on node ', node, ' load')
-                }
+                });
             }
         }
     }
@@ -629,11 +636,9 @@ window.MutationObserver = window.MutationObserver ||
         var directiveScopeName = getScopeName(directive);
         if (node[directiveScopeName]) {
             if (directive.onAlter) {
-                try {
+                execute(function(){
                     directive.onAlter.call(node[directiveScopeName], node, attributeValue)
-                } catch (e) {
-                    console.error('directive ', directive.name, ' caused error ', e, ' on node ', node, ' alter')
-                }
+                });
             }
         }
     }
@@ -642,11 +647,9 @@ window.MutationObserver = window.MutationObserver ||
         var directiveScopeName = getScopeName(directive);
         if (node[directiveScopeName]) {
             if (directive.onUnload) {
-                try {
+                execute(function(){
                     directive.onUnload.call(node[directiveScopeName], node, attributeValue);
-                } catch (e) {
-                    console.error('directive ', directive.name, ' caused error ', e, ' on node ', node, ' unload')
-                }
+                });
             }
             node[directiveScopeName] = void 0
         }
