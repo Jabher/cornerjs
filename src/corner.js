@@ -1,9 +1,10 @@
 window['directive'] = (function () {
     "use strict";
-    var ignoredAttributes = ['id', 'href', 'style', 'class', 'src'];
-    var prefixList = ['data-', 'directive-', ''];
-    var directiveAliasList = {};
-    var directives = {};
+    var ignoredAttributes = ['id', 'href', 'style', 'class', 'src'],
+        prefixList = ['data-', 'directive-', ''],
+        directiveAliasList = {},
+        directives = {},
+        $ = document.querySelectorAll.bind(document);
 
     function uniq(array) {
         return array.filter(function (a, b, c) {
@@ -28,13 +29,17 @@ window['directive'] = (function () {
         }
         return value
     }
-    function execute(fun){
-        try {
-            fun()
-        } catch (e) {
-            setTimeout(function(){
-               throw e
-            });
+
+    function executeDirectiveCallback(callback, args) {
+        if (callback) {
+            args[0] = args[1][getScopeName(args[0])];
+            try {
+                callback.apply.apply(callback.call, arguments);
+            } catch (e) {
+                setTimeout(function () {
+                    throw e
+                },0);
+            }
         }
     }
 
@@ -47,37 +52,25 @@ window['directive'] = (function () {
         return object;
     }
 
-    function directiveLoadedAction(node, directive, attributeValue) {
+    function directiveLoadedAction(directive, node, attributeValue) {
         var directiveScopeName = getScopeName(directive);
         if (!node[directiveScopeName]) {
-            var scope = node[directiveScopeName] = {};
-            if (directive.onLoad) {
-                execute(function(){
-                    directive.onLoad.call(scope, node, attributeValue)
-                });
-            }
+            node[directiveScopeName] = {};
+            executeDirectiveCallback(directive.onLoad, arguments);
         }
     }
 
-    function directiveAlteredAction(node, directive, attributeValue) {
+    function directiveAlteredAction(directive, node, attributeValue) {
         var directiveScopeName = getScopeName(directive);
         if (node[directiveScopeName]) {
-            if (directive.onAlter) {
-                execute(function(){
-                    directive.onAlter.call(node[directiveScopeName], node, attributeValue)
-                });
-            }
+            executeDirectiveCallback(directive.onAlter, arguments);
         }
     }
 
-    function directiveRemovedAction(node, directive, attributeValue) {
+    function directiveRemovedAction(directive, node, attributeValue) {
         var directiveScopeName = getScopeName(directive);
         if (node[directiveScopeName]) {
-            if (directive.onUnload) {
-                execute(function(){
-                    directive.onUnload.call(node[directiveScopeName], node, attributeValue);
-                });
-            }
+            executeDirectiveCallback(directive.onUnload, arguments);
             node[directiveScopeName] = void 0
         }
     }
@@ -85,35 +78,35 @@ window['directive'] = (function () {
     function classAdded(node, className) {
         var directive = directiveAliasList[className.toLowerCase()];
         if (directive) {
-            directiveLoadedAction(node, directive, undefined);
+            directiveLoadedAction(directive, node, undefined);
         }
     }
 
     function classRemoved(node, className) {
         var directive = directiveAliasList[className.toLowerCase()];
         if (directive) {
-            directiveRemovedAction(node, directive, undefined);
+            directiveRemovedAction(directive, node, undefined);
         }
     }
 
     function attributeAdded(node, attributeName) {
         var directive = directiveAliasList[attributeName.toLowerCase()];
         if (directive) {
-            directiveLoadedAction(node, directive, smartEval(node.attributes[attributeName].value));
+            directiveLoadedAction(directive, node, smartEval(node.attributes[attributeName].value));
         }
     }
 
     function attributeRemoved(node, attributeName) {
         var directive = directiveAliasList[attributeName.toLowerCase()];
         if (directive) {
-            directiveRemovedAction(node, directive, undefined);
+            directiveRemovedAction(directive, node, undefined);
         }
     }
 
     function attributeChanged(node, attributeName) {
         var directive = directiveAliasList[attributeName.toLowerCase()];
         if (directive) {
-            directiveAlteredAction(node, directive, smartEval(node.attributes[attributeName].value));
+            directiveAlteredAction(directive, node, smartEval(node.attributes[attributeName].value));
         }
     }
 
@@ -121,16 +114,16 @@ window['directive'] = (function () {
         var directive = directiveAliasList[ node.tagName.toLowerCase() ];
         if (directive) {
             node.addEventListener('attributeChanged', function () {
-                directiveAlteredAction(node, directive, getAttributesObject(node))
+                directiveAlteredAction(directive, node, getAttributesObject(node))
             });
-            directiveLoadedAction(node, directive, getAttributesObject(node))
+            directiveLoadedAction(directive, node, getAttributesObject(node))
         }
     }
 
     function nodeRemoved(node) {
         var directive = directiveAliasList[ node.tagName.toLowerCase() ];
         if (directive) {
-            directiveLoadedAction(node, directive, getAttributesObject(node))
+            directiveLoadedAction(directive, node, getAttributesObject(node))
         }
     }
 
@@ -268,10 +261,10 @@ window['directive'] = (function () {
                 mutationRecordProcessor(mutationRecordList[i]);
             }
         })).observe(document.body, {
-                childList: true,
+                attributeOldValue: true,
                 attributes: true,
-                subtree: true,
-                attributeOldValue: true
+                childList: true,
+                subtree: true
             });
         nodeListAdded([document.body]);
         oberverLaunched = true;
@@ -282,18 +275,17 @@ window['directive'] = (function () {
         if ((typeof name !== 'string') || spaceRegex.test(name)) {
             throw new TypeError('Directive name should be a string without spaces')
         }
+
         name = name.toLowerCase();
         if (typeof options === 'function') {
             options = {load: options};
         }
-        if (options.toString() !== "[object Object]") {
-            throw new TypeError('Directive config should be an common object')
-        }
+
         var directive = {
                 name: name,
-                onLoad: options.load || options.alter,
-                onUnload: options.unload,
-                onAlter: options.alter
+                onLoad: options['load'] || options['alter'],
+                onUnload: options['unload'],
+                onAlter: options['alter']
             },
             aliases = prefixList.map(function (p) {
                 return p + name
@@ -304,21 +296,21 @@ window['directive'] = (function () {
         directives[name] = directive;
         if (oberverLaunched) {
             aliases.forEach(function (className) {
-                var nodes = document.body.querySelectorAll('.' + className) || [];
+                var nodes = $('.' + className) || [];
                 for (var i = 0; i < nodes.length; i++) {
                     var node = nodes[i];
                     classAdded(node, className)
                 }
             });
             aliases.forEach(function (attrName) {
-                var nodes = document.body.querySelectorAll('[' + attrName + ']') || [];
+                var nodes = $('[' + attrName + ']') || [];
                 for (var i = 0; i < nodes.length; i++) {
                     var node = nodes[i];
                     attributeAdded(node, attrName)
                 }
             });
             aliases.forEach(function (tagName) {
-                var nodes = document.body.querySelectorAll(tagName) || [];
+                var nodes = $(tagName) || [];
                 for (var i = 0; i < nodes.length; i++) {
                     var node = nodes[i];
                     nodeAdded(node)
