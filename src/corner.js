@@ -4,7 +4,9 @@ window['directive'] = (function () {
         prefixList = ['data-', 'directive-', ''],
         directiveAliasList = {},
         directives = {},
-        $ = document.querySelectorAll.bind(document);
+        body = document.body,
+        $ = body.querySelectorAll.bind(body),
+        observer;
 
     function uniq(array) {
         return array.filter(function (a, b, c) {
@@ -32,13 +34,11 @@ window['directive'] = (function () {
 
     function executeDirectiveCallback(callback, args) {
         if (callback) {
-            args[0] = args[1][getScopeName(args[0])];
+            args[0] = args[0].elementScopes.get(args[1]);
             try {
                 callback.apply.apply(callback.call, arguments);
             } catch (e) {
-                setTimeout(function () {
-                    throw e
-                },0);
+                setTimeout(function () {throw e});
             }
         }
     }
@@ -52,26 +52,23 @@ window['directive'] = (function () {
         return object;
     }
 
-    function directiveLoadedAction(directive, node, attributeValue) {
-        var directiveScopeName = getScopeName(directive);
-        if (!node[directiveScopeName]) {
-            node[directiveScopeName] = {};
+    function directiveLoadedAction(directive, node) {
+        if (!directive.elementScopes.has(node)) {
+            directive.elementScopes.set(node, node[getScopeName(directive)] = {});
             executeDirectiveCallback(directive.onLoad, arguments);
         }
     }
 
-    function directiveAlteredAction(directive, node, attributeValue) {
-        var directiveScopeName = getScopeName(directive);
-        if (node[directiveScopeName]) {
+    function directiveAlteredAction(directive, node) {
+        if (directive.elementScopes.has(node)) {
             executeDirectiveCallback(directive.onAlter, arguments);
         }
     }
 
-    function directiveRemovedAction(directive, node, attributeValue) {
-        var directiveScopeName = getScopeName(directive);
-        if (node[directiveScopeName]) {
+    function directiveRemovedAction(directive, node) {
+        if (directive.elementScopes.has(node)) {
             executeDirectiveCallback(directive.onUnload, arguments);
-            node[directiveScopeName] = void 0
+            directive.elementScopes.delete(node);
         }
     }
 
@@ -256,18 +253,18 @@ window['directive'] = (function () {
             document.addEventListener('DOMContentLoaded', callback, false);
         }
     })(function () {
-        (new MutationObserver(function (mutationRecordList) {
+        observer = new MutationObserver(function (mutationRecordList) {
             for (var i = 0; i < mutationRecordList.length; i++) {
                 mutationRecordProcessor(mutationRecordList[i]);
             }
-        })).observe(document.body, {
+        });
+        observer.observe(body, {
                 attributeOldValue: true,
                 attributes: true,
                 childList: true,
                 subtree: true
             });
-        nodeListAdded([document.body]);
-        oberverLaunched = true;
+        nodeListAdded([body]);
     });
 
     var spaceRegex = /\s/;
@@ -285,7 +282,8 @@ window['directive'] = (function () {
                 name: name,
                 onLoad: options['load'] || options['alter'],
                 onUnload: options['unload'],
-                onAlter: options['alter']
+                onAlter: options['alter'],
+                elementScopes: new WeakMap()
             },
             aliases = prefixList.map(function (p) {
                 return p + name
@@ -294,7 +292,7 @@ window['directive'] = (function () {
             directiveAliasList[alias] = directive;
         });
         directives[name] = directive;
-        if (oberverLaunched) {
+        if (observer) {
             aliases.forEach(function (className) {
                 var nodes = $('.' + className) || [];
                 for (var i = 0; i < nodes.length; i++) {
