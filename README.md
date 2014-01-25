@@ -72,14 +72,14 @@ Local scope contains following by default:
 
 You can extend it easily to use for your own purposes:
 
-directive('directive-name', {
-    load: function(node, attribute){
-        this.interval = setInterval(function(){console.log('hi!')}, 100)
-    },
-    unload: function(node, attribute){
-        clearInterval(this.interval)
-    }
-})
+    directive('directive-name', {
+        load: function(node, attribute){
+            this.interval = setInterval(function(){console.log('hi!')}, 100)
+        },
+        unload: function(node, attribute){
+            clearInterval(this.interval)
+        }
+    })
 
 node will contain also some new properties: each one for directive named in the same way(local scope will be there, so you will be able to access easily to scope properties, e.g. carousel control directive will be able to access carousel container directive), also 'directives' and 'directive_aliases'. You should ignore them, they are mostly for technical purposes.
 
