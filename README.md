@@ -14,28 +14,42 @@ IE and some other browsers are working over polyfill by Polymer brothers.
 
 How it works?
 
-    directive('foo', function(){alert('bar')});
+```javascript
+directive('foo', function(){
+    alert('bar');
+});
+```
 
 Aaaand yup. That's it.
 You can now append
 
-    <div class='foo'>
+```html
+<div class='foo'>
+```
 
 or
 
-    <div foo>
+```html
+<div foo>
+```
 
 or
 
-    <div data-foo>
+```html
+<div data-foo>
+```
 
 or even
 
-    <div directive-foo="baz">
+```html
+<div directive-foo="baz">
+```
 
 and even an amazing
 
-    <foo bar="baz"/>
+```html
+<foo bar="baz"/>
+```
 
 and you'll get access to all the properties
 
@@ -43,21 +57,28 @@ and you'll get access to all the properties
 
 expanded syntax:
 
-    directive('directive-name', {
-        load: function(node, attribute){},
-        unload: function(node, attribute){},
-        alter: function(node, attribute){},
-    })
+
+```javascript
+directive('directive-name', {
+    load: function(node, attribute){},
+    unload: function(node, attribute){},
+    alter: function(node, attribute){},
+});
+```
 
 short syntax:
 
-    directive('directive-name', function(node, attribute){});
+```javascript
+directive('directive-name', function(node, attribute){});
+```
 
 is equal to
 
-    directive('directive-name', {
-            load: function(node, attribute){}
-        })
+```javascript
+directive('directive-name', {
+    load: function(node, attribute){}
+});
+```
 
 Load is called on event appearance in DOM tree, unload - on removal, alter - on attribute change.
 'template_url' has priority over 'template', overwrite is condition if content should be replaced.
@@ -65,21 +86,28 @@ Load is called on event appearance in DOM tree, unload - on removal, alter - on 
 if you initialise only {alter: } function, it automatically gets bind to load also. This is done to implement easily all the actions to be done on both load and alter, such as include directive
 
 Local scope contains following by default:
+
+```json
 {
     directive: {<...original directive content; you can alter methods on-the-fly, but actually only alter and unload changes will be reasonable...>},
     node: original node
 }
+```
 
 You can extend it easily to use for your own purposes:
 
+```javascript
 directive('directive-name', {
-    load: function(node, attribute){
-        this.interval = setInterval(function(){console.log('hi!')}, 100)
+    load: function(node, attribute) {
+        this.interval = setInterval(function() {
+            console.log('hi!');
+        }, 100);
     },
-    unload: function(node, attribute){
+    unload: function(node, attribute) {
         clearInterval(this.interval)
     }
 })
+```
 
 node will contain also some new properties: each one for directive named in the same way(local scope will be there, so you will be able to access easily to scope properties, e.g. carousel control directive will be able to access carousel container directive), also 'directives' and 'directive_aliases'. You should ignore them, they are mostly for technical purposes.
 
@@ -89,19 +117,27 @@ node will contain also some new properties: each one for directive named in the 
 
 It has some magic also.
 
-    <div directive-foo="baz">
+```html
+<div directive-foo="baz">
+```
 
 returns as attribute
 
-    'baz'
+```javascript
+'baz'
+```
 
 But if you'll input
 
-    <div directive-foo="baz: 'baz'">
+```html
+<div directive-foo="baz: 'baz'">
+```
 
 it will bring you
 
-     {baz: 'baz'}
+```json
+{baz: 'baz'}
+```
 
 It is based on window.eval, so you are able to do every piece of code possible.
 First it alledge that curvy braces are omitted, then if eval fails forgets about it and attempts a second try with direct content eval(). If even this fails original string is passed.
@@ -109,7 +145,9 @@ First it alledge that curvy braces are omitted, then if eval fails forgets about
 ## Mechanics details
 attribute directive has priority over the class directive. If you have
 
+```html
 <div class="data-directive_name directive_name" directive_name="some_value" data-directive_name="some_other_value">
+```
 
 ...well, you dig that pit for yourself by your own hands.
  Actually you can do it as logic is bright and clear:
@@ -117,14 +155,14 @@ attribute directive has priority over the class directive. If you have
 - next it passes through attributes list
 
 pass order inside array is also simple: first goes non-prefixed value, then all the prefixes value.
-I strongly recommend to leave config in the beginning as-is or at least leave "data" prefix at the beginning.
+I strongly recommend to leave config in the beginning as-is or at least leave `"data"` prefix at the beginning.
 
 ## jQuery
-If you are using jQuery just use $('#selector')[0] to get access to original node
+If you are using `jQuery` just use `$('#selector')[0]` to get access to original node
 
 
 ##Current bugs
-IE 9 and 10 do not support attribute removal from the node. It is allegedly connected with mutationobserver polyfill, and is uncommon situation(usually it is done by hands rather by manipulating DOM), so it should be just taken in mind that it is recommended to remove node, not attribute directive. Otherwise you can use class and tag directives.
+IE 9 and 10 do not support attribute removal from the node. It is allegedly connected with `MutationObserver` polyfill, and is uncommon situation (usually it is done by hands rather by manipulating DOM), so it should be just taken in mind that it is recommended to remove node, not attribute directive. Otherwise you can use class and tag directives.
 
 ## Plans for future
 
