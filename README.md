@@ -1,4 +1,4 @@
-CornerJS. HTML APIs reimagined
+CornerJS. HTML APIs re-imagined
 ===
 
 Did you ever have a feeling that your (or someone else's plugin) has too heavy interface.
@@ -136,8 +136,40 @@ directive('handlebars-template-with-data-from-url', function(el){
     //...do magic...
 });
 ```
-In that case **video-player** will not be executed.
+In that case **video-player** directive will not be executed.
 
+## Why it should blow my mind?
+Because 80% of code on every website is about isolated widgets.
+Sometimes 100%.
+Then you should create a specific API to handle stuff on your page.
+After that you create this code, you should take care about load conditions, page load, popups, page changes, preload and all other stuff.
 
-##Current bugs
+Now you can create APIs that are already familiar: attributes and classes, so that web designers can work apart from developers.
+You can isolate JS logic inside an element in simplest way ever.
+You make your code in less nested way.
+You can provide horizontal scaling instead of coplexity growth.
+If you want to cover your website with tests, you need just to cover every widget: they are not interfering with each other.
+
+## So why again, why it is so good? I want you to excite me with lot of complex words!
+
+CornerJS relies upon native DOM interfaces and lets you create new APIs over HTML.
+It is as robust, solid and as-fast-as-possible - CornerJS relies upon MutationObserver API that shoots callbacks exactly after DOM changes.
+Manipulations inside the callbacks are likely to be applied before page will be re-rendered, so user very likely will not even see non-loaded component.
+
+Component paradigm of CornerJS is a great case of functional design, where every module implements only one function.
+It allows you to isolate business logic and visual components and scale horizontally.
+
+## Most common use cases
++ Widget or component initializer (efficiency feels most on AJAXful websites)
++ Custom input fields
++ Custom social plugins
++ "dirty" hacks over HTML manipulation in existing application
++ AJAX navigation: links default behaviour override
++ conditional script load: loading required scripts/styles only if this page needs it
+
+## Possibly weird behaviour (if not familiar)
+If some widget is acting in not expected way, you'd rather check if multiple directives are registered.
+If both of them are manipulating DOM, result can vary.
+
+## Current bugs
 IE 9 and 10 do not support attribute removal from the node. It is allegedly connected with mutationobserver polyfill, and is uncommon situation(usually it is done by hands rather by manipulating DOM), so it should be just taken in mind that it is recommended to remove node, not attribute directive. Otherwise you can use class and tag directives.
