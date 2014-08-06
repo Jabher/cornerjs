@@ -1,243 +1,4 @@
-/* (The MIT License)
- *
- * Copyright (c) 2012 Brandon Benvie <http://bbenvie.com>
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
- * associated documentation files (the 'Software'), to deal in the Software without restriction,
- * including without limitation the rights to use, copy, modify, merge, publish, distribute,
- * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included with all copies or
- * substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
-// Original WeakMap implementation by Gozala @ https://gist.github.com/1269991
-// Updated and bugfixed by Raynos @ https://gist.github.com/1638059
-// Expanded by Benvie @ https://github.com/Benvie/harmony-collections
-
-void function(global, undefined_, undefined){
-    var getProps = Object.getOwnPropertyNames,
-        defProp  = Object.defineProperty,
-        toSource = Function.prototype.toString,
-        create   = Object.create,
-        hasOwn   = Object.prototype.hasOwnProperty,
-        funcName = /^\n?function\s?(\w*)?_?\(/;
-
-
-    function define(object, key, value){
-        if (typeof key === 'function') {
-            value = key;
-            key = nameOf(value).replace(/_$/, '');
-        }
-        return defProp(object, key, { configurable: true, writable: true, value: value });
-    }
-
-    function nameOf(func){
-        return typeof func !== 'function'
-            ? '' : 'name' in func
-            ? func.name : toSource.call(func).match(funcName)[1];
-    }
-
-    // ############
-    // ### Data ###
-    // ############
-
-    var Data = (function(){
-        var dataDesc = { value: { writable: true, value: undefined } },
-            datalock = 'return function(k){if(k===s)return l}',
-            uids     = create(null),
-
-            createUID = function(){
-                var key = Math.random().toString(36).slice(2);
-                return key in uids ? createUID() : uids[key] = key;
-            },
-
-            globalID = createUID(),
-
-            storage = function(obj){
-                if (hasOwn.call(obj, globalID))
-                    return obj[globalID];
-
-                if (!Object.isExtensible(obj))
-                    throw new TypeError("Object must be extensible");
-
-                var store = create(null);
-                defProp(obj, globalID, { value: store });
-                return store;
-            };
-
-        // common per-object storage area made visible by patching getOwnPropertyNames'
-        define(Object, function getOwnPropertyNames(obj){
-            var props = getProps(obj);
-            if (hasOwn.call(obj, globalID))
-                props.splice(props.indexOf(globalID), 1);
-            return props;
-        });
-
-        function Data(){
-            var puid = createUID(),
-                secret = {};
-
-            this.unlock = function(obj){
-                var store = storage(obj);
-                if (hasOwn.call(store, puid))
-                    return store[puid](secret);
-
-                var data = create(null, dataDesc);
-                defProp(store, puid, {
-                    value: new Function('s', 'l', datalock)(secret, data)
-                });
-                return data;
-            }
-        }
-
-        define(Data.prototype, function get(o){ return this.unlock(o).value });
-        define(Data.prototype, function set(o, v){ this.unlock(o).value = v });
-
-        return Data;
-    }());
-
-
-    var WM = (function(data){
-        var validate = function(key){
-            if (key == null || typeof key !== 'object' && typeof key !== 'function')
-                throw new TypeError("Invalid WeakMap key");
-        }
-
-        var wrap = function(collection, value){
-            var store = data.unlock(collection);
-            if (store.value)
-                throw new TypeError("Object is already a WeakMap");
-            store.value = value;
-        }
-
-        var unwrap = function(collection){
-            var storage = data.unlock(collection).value;
-            if (!storage)
-                throw new TypeError("WeakMap is not generic");
-            return storage;
-        }
-
-        var initialize = function(weakmap, iterable){
-            if (iterable !== null && typeof iterable === 'object' && typeof iterable.forEach === 'function') {
-                iterable.forEach(function(item, i){
-                    if (item instanceof Array && item.length === 2)
-                        set.call(weakmap, iterable[i][0], iterable[i][1]);
-                });
-            }
-        }
-
-
-        function WeakMap(iterable){
-            if (this === global || this == null || this === WeakMap.prototype)
-                return new WeakMap(iterable);
-
-            wrap(this, new Data);
-            initialize(this, iterable);
-        }
-
-        function get(key){
-            validate(key);
-            var value = unwrap(this).get(key);
-            return value === undefined_ ? undefined : value;
-        }
-
-        function set(key, value){
-            validate(key);
-            // store a token for explicit undefined so that "has" works correctly
-            unwrap(this).set(key, value === undefined ? undefined_ : value);
-        }
-
-        function has(key){
-            validate(key);
-            return unwrap(this).get(key) !== undefined;
-        }
-
-        function delete_(key){
-            validate(key);
-            var data = unwrap(this),
-                had = data.get(key) !== undefined;
-            data.set(key, undefined);
-            return had;
-        }
-
-        function toString(){
-            unwrap(this);
-            return '[object WeakMap]';
-        }
-
-        try {
-            var src = ('return '+delete_).replace('e_', '\\u0065'),
-                del = new Function('unwrap', 'validate', src)(unwrap, validate);
-        } catch (e) {
-            var del = delete_;
-        }
-
-        var src = (''+Object).split('Object');
-        var stringifier = function toString(){
-            return src[0] + nameOf(this) + src[1];
-        };
-
-        define(stringifier, stringifier);
-
-        var prep = { __proto__: [] } instanceof Array
-            ? function(f){ f.__proto__ = stringifier }
-            : function(f){ define(f, stringifier) };
-
-        prep(WeakMap);
-
-        [toString, get, set, has, del].forEach(function(method){
-            define(WeakMap.prototype, method);
-            prep(method);
-        });
-
-        return WeakMap;
-    }(new Data));
-
-    var defaultCreator = Object.create
-        ? function(){ return Object.create(null) }
-        : function(){ return {} };
-
-    function createStorage(creator){
-        var weakmap = new WM;
-        creator || (creator = defaultCreator);
-
-        function storage(object, value){
-            if (value || arguments.length === 2) {
-                weakmap.set(object, value);
-            } else {
-                value = weakmap.get(object);
-                if (value === undefined) {
-                    value = creator(object);
-                    weakmap.set(object, value);
-                }
-            }
-            return value;
-        }
-
-        return storage;
-    }
-
-
-    if (typeof module !== 'undefined') {
-        module.exports = WM;
-    } else if (typeof exports !== 'undefined') {
-        exports.WeakMap = WM;
-    } else if (!('WeakMap' in global)) {
-        global.WeakMap = WM;
-    }
-
-    WM.createStorage = createStorage;
-    if (global.WeakMap)
-        global.WeakMap.createStorage = createStorage;
-}((0, eval)('this'));;/*
+/*
  * Copyright 2012 The Polymer Authors. All rights reserved.
  */
 
@@ -784,317 +545,206 @@ window.MutationObserver = window.MutationObserver ||
         };
 
         return JsMutationObserver;
-    })();;window['directive'] = (function () {
-    "use strict";
-    var ignoredAttributes = ['id', 'href', 'style', 'class', 'src'],
-        prefixList = ['data-', 'directive-', ''],
-        directiveAliasList = {},
-        directives = {},
-        body = document.body,
-        $ = body.querySelectorAll.bind(body),
-        observer;
+    })();;(function (global) {
+    var directive_map = {},
+        directive_list = [],
+        key = '__directives__';
 
-    function uniq(array) {
-        return array.filter(function (a, b, c) {
-            return c.indexOf(a, b + 1) === -1
-        });
+    function itar(iterable, callback) {
+        if (iterable && iterable.length)
+            Array.prototype.forEach.call(iterable, callback);
     }
 
-    function smartEval(value) {
-        try {
-            value = eval('({' + value + '})')
-        } catch (e) {
-            try {
-                value = eval('(' + value + ')')
-            } catch (e) {
-            }
-        }
-        return value
-    }
-
-    function executeDirectiveCallback(callback, args) {
-        if (callback) {
-            args[0] = args[0].elementScopes.get(args[1]);
-            try {
-                callback.apply.apply(callback.call, arguments);
-            } catch (e) {
-                setTimeout(function () {throw e});
+    function wrap_cb(cb){
+        if (cb) {
+            return function(){
+                try {
+                    cb.apply(global, arguments);
+                } catch (e) {
+                    console.error(e, {arguments: arguments});
+                    setTimeout(function(){
+                        throw e;
+                    })
+                }
             }
         }
     }
 
-    function getAttributesObject(node) {
-        var object = {};
-        for (var i = 0; i < node.attributes.length; i++) {
-            var attribute = node.attributes[i];
-            object[attribute.name] = smartEval(attribute.value);
-        }
-        return object;
+    function directive(name, opts) {
+        if (name in directive_map) throw new Error('directive already registered');
+        if (opts instanceof Function) opts = {load: opts};
+        directive_list.push(directive_map[name] = {name: name.toLowerCase(), onload: wrap_cb(opts.load || opts.alter), onunload: wrap_cb(opts.unload), onalter: wrap_cb(opts.alter)});
+        itar(document.body.querySelectorAll([name, ', [', name, '], .', name].join('')), element_loaded);
     }
 
-    function directiveLoadedAction(directive, node) {
-        if (!directive.elementScopes.has(node)) {
-            directive.elementScopes.set(node, {});
-            executeDirectiveCallback(directive.onLoad, arguments);
-        }
-    }
-
-    function directiveAlteredAction(directive, node) {
-        if (directive.elementScopes.has(node)) {
-            executeDirectiveCallback(directive.onAlter, arguments);
-        }
-    }
-
-    function directiveRemovedAction(directive, node) {
-        if (directive.elementScopes.has(node)) {
-            executeDirectiveCallback(directive.onUnload, arguments);
-            directive.elementScopes.delete(node);
-        }
-    }
-
-    function classAdded(node, className) {
-        var directive = directiveAliasList[className.toLowerCase()];
-        if (directive) {
-            directiveLoadedAction(directive, node, undefined);
-        }
-    }
-
-    function classRemoved(node, className) {
-        var directive = directiveAliasList[className.toLowerCase()];
-        if (directive) {
-            directiveRemovedAction(directive, node, undefined);
-        }
-    }
-
-    function attributeAdded(node, attributeName) {
-        var directive = directiveAliasList[attributeName.toLowerCase()];
-        if (directive) {
-            directiveLoadedAction(directive, node, smartEval(node.attributes[attributeName].value));
-        }
-    }
-
-    function attributeRemoved(node, attributeName) {
-        var directive = directiveAliasList[attributeName.toLowerCase()];
-        if (directive) {
-            directiveRemovedAction(directive, node, undefined);
-        }
-    }
-
-    function attributeChanged(node, attributeName) {
-        var directive = directiveAliasList[attributeName.toLowerCase()];
-        if (directive) {
-            directiveAlteredAction(directive, node, smartEval(node.attributes[attributeName].value));
-        }
-    }
-
-    function nodeAdded(node) {
-        var directive = directiveAliasList[ node.tagName.toLowerCase() ];
-        if (directive) {
-            node.addEventListener('attributeChanged', function () {
-                directiveAlteredAction(directive, node, getAttributesObject(node))
+    function eval_attribute(element, attributeName) {
+        if (!attributeName) {
+            var attrs = {};
+            itar(element.attributes, function (attribute) {
+                attrs[attribute.name] = eval_attribute(element, attribute.name);
             });
-            directiveLoadedAction(directive, node, getAttributesObject(node))
-        }
-    }
-
-    function nodeRemoved(node) {
-        var directive = directiveAliasList[ node.tagName.toLowerCase() ];
-        if (directive) {
-            directiveLoadedAction(directive, node, getAttributesObject(node))
-        }
-    }
-
-
-    function nodeListAdded(nodeList) {
-        var i, j;
-        for (i = 0; i < nodeList.length; i++) {
-            var node = nodeList[i];
-            if (node.tagName) {
-                nodeAdded(node);
-            }
-            if (node.className) {
-                var classList = node.className.split(' ').filter(function (a) {
-                    return a.length
-                });
-                for (j = 0; j < classList.length; j++) {
-                    classAdded(node, classList[j]);
-                }
-            }
-            if (node.attributes) {
-                for (j = 0; j < node.attributes.length; j++) {
-                    if (ignoredAttributes.indexOf(node.attributes[j].name) === -1) {
-                        attributeAdded(node, node.attributes[j].name);
-                    }
-                }
-            }
-        }
-
-
-        for (i = 0; i < nodeList.length; i++) {
-            var node = nodeList[i];
-            for (i = 0; i < nodeList.length; i++) {
-                if (nodeList[i].children) {
-                    nodeListAdded(nodeList[i].children)
-                }
-            }
-        }
-    }
-
-    function nodeListRemoved(nodeList) {
-        var i, j;
-        for (i = 0; i < nodeList.length; i++) {
-            if (nodeList[i].children) {
-                nodeListRemoved(nodeList[i].children)
-            }
-        }
-        for (i = 0; i < nodeList.length; i++) {
-            var node = nodeList[i];
-            if (node.tagName) {
-                nodeRemoved(node);
-            }
-            if (node.className) {
-                var classList = node.className.split(' ').filter(function (a) {
-                    return a.length
-                });
-                for (j = 0; j < classList.length; j++) {
-                    classRemoved(node, classList[j]);
-                }
-            }
-            if (node.attributes) {
-                for (j = 0; j < node.attributes.length; j++) {
-                    if (ignoredAttributes.indexOf(node.attributes[j].name) === -1) {
-                        attributeRemoved(node, node.attributes[j].name);
-                    }
-                }
-            }
-        }
-
-    }
-
-    function classMutated(mutationRecord) {
-        var oldClassList = uniq((mutationRecord.oldValue || '').split(' ').filter(function (a) {
-                return a.length
-            })),
-            newClassList = uniq((mutationRecord.target.className || '').split(' ').filter(function (a) {
-                return a.length
-            })),
-            diff = {
-                removedList: oldClassList.filter(function (a) {
-                    return newClassList.indexOf(a) === -1
-                }),
-                addedList: newClassList.filter(function (a) {
-                    return oldClassList.indexOf(a) === -1
-                })
-            };
-        diff.removedList.forEach(function (removedClass) {
-            classRemoved(mutationRecord.target, removedClass)
-        });
-        diff.addedList.forEach(function (addedClass) {
-            classAdded(mutationRecord.target, addedClass)
-        });
-    }
-
-    function attributeMutated(mutationRecord) {
-        if (ignoredAttributes.indexOf(mutationRecord.attributeName) !== -1) {
-            return
-        }
-        mutationRecord.target.dispatchEvent(new CustomEvent('attributeChanged', {bubbles: false}));
-        if (mutationRecord.oldValue === null) {
-            attributeAdded(mutationRecord.target, mutationRecord.attributeName)
-        } else if (!mutationRecord.target.attributes[mutationRecord.attributeName]) {
-            attributeRemoved(mutationRecord.target, mutationRecord.attributeName)
+            return attrs;
         } else {
-            attributeChanged(mutationRecord.target, mutationRecord.attributeName)
-        }
-    }
-
-    var oberverLaunched = false;
-
-    function mutationRecordProcessor(mutationRecord) {
-        switch (mutationRecord.type) {
-            case 'childList':
-                nodeListAdded(mutationRecord.addedNodes);
-                nodeListRemoved(mutationRecord.removedNodes);
-                break;
-            case 'attributes':
-                if (mutationRecord.attributeName === 'class') {
-                    classMutated(mutationRecord)
-                } else {
-                    attributeMutated(mutationRecord)
+            var attribute = element.attributes[attributeName];
+            try {
+                return eval('({' + attribute.value + '})')
+            } catch (e) {
+                try {
+                    return eval('(' + attribute.value + ')')
+                } catch (e) {
+                    return attribute && attribute.value;
                 }
-                break;
-        }
-    }
-
-    (function (callback) {
-        if (document.readyState === 'complete') {
-            callback()
-        } else {
-            document.addEventListener('DOMContentLoaded', callback, false);
-        }
-    })(function () {
-        observer = new MutationObserver(function (mutationRecordList) {
-            for (var i = 0; i < mutationRecordList.length; i++) {
-                mutationRecordProcessor(mutationRecordList[i]);
             }
+        }
+    }
+
+
+    function corner_init() {
+        element_loaded(document.body);
+        new MutationObserver(function (mutationEventList) {
+            itar(mutationEventList, function (mutationEvent) {
+                switch (mutationEvent.type) {
+                    case 'childList':
+                        itar(mutationEvent.addedNodes, element_loaded_wrapper);
+                        itar(mutationEvent.removedNodes, element_removed_wrapper);
+                        break;
+                    case 'attributes':
+                        var target = mutationEvent.target;
+
+                        if (mutationEvent.attributeName === 'class') {
+                            var oldClassList = (mutationEvent.oldValue || '').split(' '),
+                                newClassList = (target.className || '').split(' ');
+
+                            itar(oldClassList.filter(function (entry) {return newClassList.indexOf(entry) === -1}), function (name) {
+                                if (directive_map[name]) directive_removed(directive_map[name], target);
+                            });
+                            itar(newClassList.filter(function (entry) {return oldClassList.indexOf(entry) === -1}), function (name) {
+                                if (directive_map[name]) directive_loaded(directive_map[name], target, 'class');
+                            });
+
+                        }
+                        else if (directive_map[mutationEvent.attributeName]) {
+                            var directive = directive_map[mutationEvent.attributeName];
+
+                            if (target.attributes[mutationEvent.attributeName])
+                                if (mutationEvent.oldValue !== null)
+                                    directive_altered(directive, target, 'attribute');
+                                else
+                                    directive_loaded(directive, target, 'attribute');
+                            else
+                                directive_removed(directive, target);
+                        }
+
+
+                        if (target[key] && target[key]['$'])
+                            directive_altered(target[key]['$'].directive, target, 'tag');
+
+                        break;
+                }
+            });
+        }).observe(document.body, {
+                childList        : true,
+                subtree          : true,
+                attribute        : true,
+                attributeOldValue: true
+            });
+    }
+
+
+    document.addEventListener('DOMContentLoaded', corner_init);
+    if (document.readyState !== 'loading') corner_init();
+
+    function element_loaded_wrapper(element) {
+        element_loaded(element);
+        itar(element.children, element_loaded_wrapper);
+    }
+
+    function element_loaded(element) {
+        if (!element.tagName) return;
+        var element_tag_directives = [],
+            element_class_directives = [],
+            element_attribute_directives = [],
+            element_class_list = (element.className || '').split(' ');
+        directive_list.forEach(function (directive) {
+            if (element.tagName.toLowerCase() === directive.name)
+                element_tag_directives.push(directive);
+
+            if (directive.name in element.attributes)
+                element_attribute_directives.push(directive);
+
+            if (element_class_list.indexOf(directive.name) !== -1)
+                element_class_directives.push(directive);
         });
-        observer.observe(body, {
-                attributeOldValue: true,
-                attributes: true,
-                childList: true,
-                subtree: true
-            });
-        nodeListAdded([body]);
-    });
 
-    var spaceRegex = /\s/;
-    return (function (name, options) {
-        if ((typeof name !== 'string') || spaceRegex.test(name)) {
-            throw new TypeError('Directive name should be a string without spaces')
+        function directive_loaded_caller(type) {
+            return function (directive) {
+                directive_loaded(directive, element, type)
+            }
         }
 
-        name = name.toLowerCase();
-        if (typeof options === 'function') {
-            options = {load: options};
+        if (element_tag_directives.length + element_class_directives.length + element_attribute_directives.length) {
+            element_tag_directives.forEach(directive_loaded_caller('tag'));
+            element_attribute_directives.forEach(directive_loaded_caller('attribute'));
+            element_class_directives.forEach(directive_loaded_caller('class'));
         }
+    }
 
-        var directive = {
-                name: name,
-                onLoad: options['load'] || options['alter'],
-                onUnload: options['unload'],
-                onAlter: options['alter'],
-                elementScopes: new WeakMap()
-            },
-            aliases = prefixList.map(function (p) {
-                return p + name
-            });
-        aliases.forEach(function (alias) {
-            directiveAliasList[alias] = directive;
+    function register_directive(directive, element, recordType) {
+        var argument;
+        if (recordType === 'tag')
+            argument = eval_attribute(element);
+        else if (recordType === 'attribute')
+            argument = eval_attribute(element, directive.name);
+
+        var entry = element[key][directive.name] = {
+            type     : recordType,
+            argument : argument,
+            directive: directive
+        };
+        if (recordType === 'tag') Object.defineProperty(element[key], '$', {value: entry});
+        return entry;
+    }
+
+    function directive_loaded(directive, element, recordType) {
+        if (!element[key]) Object.defineProperty(element, key, { value: {} });
+        if (element[key][directive.name]) return;
+
+        var element_directive = register_directive(directive, element, recordType);
+
+        if (directive.onload)
+            directive.onload(element, element_directive.argument);
+    }
+
+    function directive_altered(directive, element, recordType) {
+        if (directive.onalter)
+            directive.onalter(element, register_directive(directive, element, recordType).argument);
+    }
+
+    function element_removed_wrapper(element) {
+        itar(element.children, element_removed_wrapper);
+        element_removed(element);
+    }
+
+    function element_removed(element) {
+        if (!element[key]) return;
+        Object.keys(element[key]).forEach(function (directiveName) {
+            var directive = directive_map[directiveName];
+            if (directive.onunload)
+                directive.onunload(element, element[key][directive.name].argument);
         });
-        directives[name] = directive;
-        if (observer) {
-            aliases.forEach(function (className) {
-                var nodes = $('.' + className) || [];
-                for (var i = 0; i < nodes.length; i++) {
-                    var node = nodes[i];
-                    classAdded(node, className)
-                }
-            });
-            aliases.forEach(function (attrName) {
-                var nodes = $('[' + attrName + ']') || [];
-                for (var i = 0; i < nodes.length; i++) {
-                    var node = nodes[i];
-                    attributeAdded(node, attrName)
-                }
-            });
-            aliases.forEach(function (tagName) {
-                var nodes = $(tagName) || [];
-                for (var i = 0; i < nodes.length; i++) {
-                    var node = nodes[i];
-                    nodeAdded(node)
-                }
-            });
-        }
-        return name
-    }).bind(this);
-}).call(window);
+    }
+
+    function directive_removed(directive, element) {
+        if (element[key] && directive.onunload)
+            directive.onunload(element, element[key][directive.name].argument);
+        delete element[key][directive.name];
+    }
+
+    if ('module' in global) {
+        global.module.exports = directive;
+    } else if ('exports' in global) {
+        global.exports = directive;
+    } else {
+        global.directive = directive;
+    }
+})((0, eval)('this'));

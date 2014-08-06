@@ -101,4 +101,38 @@ describe "basic functionality", ->
     runs ->
       expect(directiveCallback).toHaveBeenCalled()
 
+  it "shoot share the scope", ->
+    testValue = 5
+    directiveCallback = undefined
+    directiveName = undefined
+    directiveLoaderCalled = undefined
+    directiveUnloaderCalled = undefined
+    elementExists = undefined
+    directiveName = "scopeShareTestDirective"
+    directiveCallback = jasmine.createSpy(directiveName + "Callback")
+    elementExists = false
+    directiveUnloaderCalled = false
+    runs ->
+      directive directiveName,
+        load: ->
+          this.testValue = testValue
+          directiveLoaderCalled = true
+          directiveCallback()
+        unload: ->
+          expect(this.testValue).toEqual(testValue)
+          directiveUnloaderCalled = true
+          directiveCallback()
+
+      $(document.body).append "<div class=\"" + directiveName + "\"></div>"
+
+    waitsFor (->
+      directiveLoaderCalled
+    ), "the directive should load", 500
+    runs ->
+      $("." + directiveName).remove()
+
+    waitsFor (->
+      directiveUnloaderCalled
+    ), "the directive destructor should be called", 500
+
 

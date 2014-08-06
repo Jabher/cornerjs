@@ -1,31 +1,31 @@
 {
-    "name": "corner.js",
-    "version": "0.5.0",
-    "dependencies": {
-        "grunt": "*",
-        "grunt-contrib-uglify": "*"
-    },
-    "description": "Easy to use directives engine, that gives you a super-ability just to put into the far corner stuff you want to forget about:\r  - social buttons\r  - animations\r  - intervals and timeouts\r  - on-element-appear actions\r- custom scrolls",
-    "main": "gruntfile.js",
-    "directories": {
-        "test": "tests",
-        "build": "current build",
-        "src": "sources"
-    },
-    "devDependencies": {},
-    "scripts": {
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/Jabher/cornerjs.git"
-    },
-    "keywords": [
-        "mutationObserver",
-        "directive"
-    ],
-    "author": "Jabher (Vsevolod Rodionov)",
-    "license": "BSD",
-    "bugs": {
-        "url": "https://github.com/Jabher/cornerjs/issues"
-    }
+  "name": "corner.js",
+  "version": "0.9",
+  "devDependencies": {
+    "grunt": "*",
+    "grunt-cli": "^0.1.13",
+    "grunt-contrib-concat": "^0.5.0",
+    "grunt-contrib-uglify": "^0.5.1"
+  },
+  "description": "A new way to create beautiful HTML-binded APIs",
+  "main": "build/corner.js",
+  "directories": {
+    "test": "tests",
+    "build": "current build",
+    "src": "sources"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jabher/cornerjs.git"
+  },
+  "keywords": [
+    "mutationObserver",
+    "directive"
+  ],
+  "author": "Jabher (Vsevolod Rodionov)",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/Jabher/cornerjs/issues"
+  }
 }
