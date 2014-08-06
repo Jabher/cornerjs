@@ -1,7 +1,7 @@
 CornerJS. HTML APIs re-imagined
 ===
 
-Did you ever have a feeling that your (or someone else's plugin) has too heavy interface.
+Did you ever have a feeling that your (or someone else's plugin) has too heavy interface?
 
 Ever felt ashamed for something like
 ```html
