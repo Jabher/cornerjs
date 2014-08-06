@@ -64,6 +64,19 @@ directive('myplugin', function(element, opts){
     $(element).myplugin(opts); 
 })
 ```
+**note**: values can be JS code or just strings. The following pseudo-code will explain logic of values eval-ing
+```
+function eval(value) {
+    try {
+        try   { return eval ( '{' + value + '}' ) } 
+        catch { return eval ( value ) }
+    } catch {
+        return value;
+    }
+}
+```
+
+
 If you need to make a destructor
 ```javascript
 directive('myplugin', {
@@ -99,20 +112,27 @@ directive('myplugin', {
 ```
 
 ### Note
-If only **alter** callback is defined, it is also called on element load. 
+If only **alter** callback is defined, it is also called on element load.
+ 
 It is done due to a lot of cases when load and alter logic are identical.
 
 ## API spec
 Shorthand method
+```
     directive(String directiveName, Function loadCallback)
-is equal to 
+```
+is equal to
+```
     directive(String directiveName, {load: Function loadCallback})
+```
 Full method
+```
     directive(String directiveName, {
         \[load:   Function loadCallback\]
         \[alter:  Function alterCallback\]
         \[unload: Function unloadCallback\]
     })
+```
 ## Mechanics details
 If you created something like
 <directive-name class="directive_name" directive_name="some_value">
