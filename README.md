@@ -128,9 +128,9 @@ is equal to
 Full method
 ```
     directive(String directiveName, {
-        \[load:   Function loadCallback\]
-        \[alter:  Function alterCallback\]
-        \[unload: Function unloadCallback\]
+        [load:   Function loadCallback]
+        [alter:  Function alterCallback]
+        [unload: Function unloadCallback]
     })
 ```
 ## Mechanics details
