@@ -28,7 +28,7 @@
         if (name in directive_map) throw new Error('directive already registered');
         if (opts instanceof Function) opts = {load: opts};
         directive_list.push(directive_map[name] = {name: name, originalName: originalName, onload: wrap_cb(opts.load || opts.alter), onunload: wrap_cb(opts.unload), onalter: wrap_cb(opts.alter)});
-        itar(document.body.querySelectorAll([name, ', [', name, '], .', name].join('')), element_loaded);
+        if (document.body) itar(document.body.querySelectorAll([name, ', [', name, '], .', name].join('')), element_loaded);
     }
 
     function eval_attribute(element, attributeName) {
