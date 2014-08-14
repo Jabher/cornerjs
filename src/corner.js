@@ -12,12 +12,12 @@
         if (cb) {
             return function(){
                 try {
-                    cb.apply(global, arguments);
+                    cb.apply(this, arguments);
                 } catch (e) {
                     console.error(e, {arguments: arguments});
                     setTimeout(function(){
                         throw e;
-                    })
+                    },0);
                 }
             }
         }
@@ -115,6 +115,9 @@
 
     function element_loaded(element) {
         if (!element.tagName) return;
+        var topParent = element.parentElement;
+        while (topParent.parentElement) topParent = topParent.parentElement;
+        if (topParent !== document.documentElement) return;
         var element_tag_directives = [],
             element_class_directives = [],
             element_attribute_directives = [],
