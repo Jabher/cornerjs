@@ -1,6 +1,7 @@
 CornerJS. HTML APIs re-imagined
 ===
 [![NPM version](https://badge.fury.io/js/corner.js.svg)](http://badge.fury.io/js/corner.js)
+
 Did you ever have a feeling that your (or someone else's plugin) has too heavy interface?
 
 Ever felt ashamed for something like
