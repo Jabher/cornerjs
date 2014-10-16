@@ -559,22 +559,23 @@ window.MutationObserver = window.MutationObserver ||
         if (cb) {
             return function(){
                 try {
-                    cb.apply(global, arguments);
+                    cb.apply(this, arguments);
                 } catch (e) {
                     console.error(e, {arguments: arguments});
                     setTimeout(function(){
                         throw e;
-                    })
+                    },0);
                 }
             }
         }
     }
 
-    function directive(name, opts) {
+    function directive(originalName, opts) {
+        var name = originalName.toLowerCase();
         if (name in directive_map) throw new Error('directive already registered');
         if (opts instanceof Function) opts = {load: opts};
-        directive_list.push(directive_map[name] = {name: name.toLowerCase(), onload: wrap_cb(opts.load || opts.alter), onunload: wrap_cb(opts.unload), onalter: wrap_cb(opts.alter)});
-        itar(document.body.querySelectorAll([name, ', [', name, '], .', name].join('')), element_loaded);
+        directive_list.push(directive_map[name] = {name: name, originalName: originalName, onload: wrap_cb(opts.load || opts.alter), onunload: wrap_cb(opts.unload), onalter: wrap_cb(opts.alter)});
+        if (document.body) itar(document.body.querySelectorAll([name, ', [', name, '], .', name].join('')), element_loaded);
     }
 
     function eval_attribute(element, attributeName) {
@@ -612,8 +613,8 @@ window.MutationObserver = window.MutationObserver ||
                         var target = mutationEvent.target;
 
                         if (mutationEvent.attributeName === 'class') {
-                            var oldClassList = (mutationEvent.oldValue || '').split(' '),
-                                newClassList = (target.className || '').split(' ');
+                            var oldClassList = (mutationEvent.oldValue || '').toLowerCase().split(' '),
+                                newClassList = (target.className || '').toLowerCase().split(' ');
 
                             itar(oldClassList.filter(function (entry) {return newClassList.indexOf(entry) === -1}), function (name) {
                                 if (directive_map[name]) directive_removed(directive_map[name], target);
@@ -660,11 +661,14 @@ window.MutationObserver = window.MutationObserver ||
     }
 
     function element_loaded(element) {
-        if (!element.tagName) return;
+        if (!element || !element.tagName) return;
+        var topParent = element.parentElement;
+        while (topParent.parentElement) topParent = topParent.parentElement;
+        if (topParent !== document.documentElement) return;
         var element_tag_directives = [],
             element_class_directives = [],
             element_attribute_directives = [],
-            element_class_list = (element.className || '').split(' ');
+            element_class_list = (element.className || '').toLowerCase().split(' ');
         directive_list.forEach(function (directive) {
             if (element.tagName.toLowerCase() === directive.name)
                 element_tag_directives.push(directive);
@@ -690,17 +694,19 @@ window.MutationObserver = window.MutationObserver ||
     }
 
     function register_directive(directive, element, recordType) {
-        var argument;
-        if (recordType === 'tag')
-            argument = eval_attribute(element);
-        else if (recordType === 'attribute')
-            argument = eval_attribute(element, directive.name);
+        var entry = element[key][directive.name];
+        if (!entry)
+            entry = element[key][directive.name] = {
+                type     : recordType,
+                directive: directive,
+                scope    : {}
+            };
 
-        var entry = element[key][directive.name] = {
-            type     : recordType,
-            argument : argument,
-            directive: directive
-        };
+        if (recordType === 'tag')
+            entry.argument = eval_attribute(element);
+        else if (recordType === 'attribute')
+            entry.argument = eval_attribute(element, directive.name);
+
         if (recordType === 'tag') Object.defineProperty(element[key], '$', {value: entry});
         return entry;
     }
@@ -712,12 +718,14 @@ window.MutationObserver = window.MutationObserver ||
         var element_directive = register_directive(directive, element, recordType);
 
         if (directive.onload)
-            directive.onload(element, element_directive.argument);
+            directive.onload.call(element_directive.scope, element, element_directive.argument);
     }
 
     function directive_altered(directive, element, recordType) {
-        if (directive.onalter)
-            directive.onalter(element, register_directive(directive, element, recordType).argument);
+        if (directive.onalter) {
+            var element_directive = register_directive(directive, element, recordType);
+            directive.onalter.call(element_directive.scope, element, element_directive.argument);
+        }
     }
 
     function element_removed_wrapper(element) {
@@ -729,15 +737,19 @@ window.MutationObserver = window.MutationObserver ||
         if (!element[key]) return;
         Object.keys(element[key]).forEach(function (directiveName) {
             var directive = directive_map[directiveName];
+            var element_directive = register_directive(directive, element);
             if (directive.onunload)
-                directive.onunload(element, element[key][directive.name].argument);
+                directive.onunload.call(element_directive.scope, element, element_directive.argument);
         });
     }
 
     function directive_removed(directive, element) {
-        if (element[key] && directive.onunload)
-            directive.onunload(element, element[key][directive.name].argument);
-        delete element[key][directive.name];
+        var element_directive = register_directive(directive, element);
+        if (element[key] && element[key][directive.name]) {
+            if (directive.onunload)
+                directive.onunload.call(element_directive.scope, element, element_directive.argument);
+            delete element[key][directive.name];
+        }
     }
 
     if ('module' in global) {
