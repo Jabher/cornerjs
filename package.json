@@ -1,6 +1,6 @@
 {
   "name": "corner.js",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "devDependencies": {
     "grunt": "*",
     "grunt-cli": "^0.1.13",

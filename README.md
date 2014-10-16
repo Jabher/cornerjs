@@ -1,6 +1,6 @@
 CornerJS. HTML APIs re-imagined
 ===
-
+[![NPM version](https://badge.fury.io/js/corner.js.svg)](http://badge.fury.io/js/corner.js)
 Did you ever have a feeling that your (or someone else's plugin) has too heavy interface?
 
 Ever felt ashamed for something like
@@ -36,6 +36,8 @@ That's why web designers, who are not familiar with JS, use it and does not your
 Most of JS libs are just something binded to DOM element, so stop lying to yourself: HTML-only api will make your lib more beautiful.
 
 CornerJS has just 8kb (2.5kb gzipped) footprint, so you can include it care-free in your lib. If you are relying upon latest browsers that support **MutationObserver**, you can just use **/src/corner.js**, which is 2.5kb minified (without gzip).
+
+CornerJS may be installed as ordinary JS library (window.directive function will be available) or npm/browserify package.
 
 How to really use it?
 
@@ -193,3 +195,10 @@ If both of them are manipulating DOM, result can vary.
 
 ## Current bugs
 IE 9 and 10 do not support attribute removal from the node. It is allegedly connected with mutationobserver polyfill, and is uncommon situation(usually it is done by hands rather by manipulating DOM), so it should be just taken in mind that it is recommended to remove node, not attribute directive. Otherwise you can use class and tag directives.
+What does it mean: if you will remove
+
+```html
+<div directive></div>
+```
+
+**directive** from the tag, unload callback will not shoot.
