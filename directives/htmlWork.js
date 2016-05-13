@@ -13,9 +13,9 @@ Object.defineProperty(Number.prototype, 'times', {
     get: function () {
         return function (callback) {
             var i;
-            var callback = this;
+            var numericValue = this;
             var returnArray = [];
-            for (i = 0; i < callback; i++) {
+            for (i = 0; i < numericValue; i++) {
                 returnArray.push(callback(i))
             }
             return returnArray
