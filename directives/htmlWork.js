@@ -12,8 +12,10 @@ directive('include', {alter: function (node, path) {
 Object.defineProperty(Number.prototype, 'times', {
     get: function () {
         return function (callback) {
+            var i;
+            var numericValue = this;
             var returnArray = [];
-            for (var i = 0; i < this; i++) {
+            for (i = 0; i < numericValue; i++) {
                 returnArray.push(callback(i))
             }
             return returnArray
