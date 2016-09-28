@@ -21,7 +21,7 @@ module.exports = function (grunt) {
                 }
             },
             options: {
-                compress: true,
+                compress: {},
                 banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
                     '<%= grunt.template.today("yyyy-mm-dd") %> */'
             }

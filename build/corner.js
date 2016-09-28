@@ -646,7 +646,7 @@ window.MutationObserver = window.MutationObserver ||
         }).observe(document.body, {
                 childList        : true,
                 subtree          : true,
-                attribute        : true,
+                attributes        : true,
                 attributeOldValue: true
             });
     }
@@ -661,7 +661,7 @@ window.MutationObserver = window.MutationObserver ||
     }
 
     function element_loaded(element) {
-        if (!element || !element.tagName) return;
+        if (!element.tagName) return;
         var topParent = element.parentElement;
         while (topParent.parentElement) topParent = topParent.parentElement;
         if (topParent !== document.documentElement) return;

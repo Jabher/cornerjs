@@ -99,7 +99,7 @@
         }).observe(document.body, {
                 childList        : true,
                 subtree          : true,
-                attribute        : true,
+                attributes        : true,
                 attributeOldValue: true
             });
     }
