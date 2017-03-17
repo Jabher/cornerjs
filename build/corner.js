@@ -739,6 +739,7 @@ if (typeof WeakMap === 'undefined') {
 
     function element_loaded(element) {
         if (!element.tagName) return;
+        if (!element.parentElement) return;
         var topParent = element.parentElement;
         while (topParent.parentElement) topParent = topParent.parentElement;
         if (topParent !== document.documentElement) return;
