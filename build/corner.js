@@ -739,7 +739,7 @@ if (typeof WeakMap === 'undefined') {
 
     function element_loaded(element) {
         if (!element.tagName) return;
-        var topParent = element.parentElement;
+        var topParent = element;
         while (topParent.parentElement) topParent = topParent.parentElement;
         if (topParent !== document.documentElement) return;
         var element_tag_directives = [],
