@@ -1,6 +1,6 @@
 CornerJS. HTML APIs re-imagined
 ===
-[![NPM version](https://badge.fury.io/js/corner.js.svg)](http://badge.fury.io/js/corner.js)
+[![NPM version](https://badge.fury.io/js/corner.js.svg)](http://badge.fury.io/js/corner.js) [![Greenkeeper badge](https://badges.greenkeeper.io/Jabher/cornerjs.svg)](https://greenkeeper.io/)
 
 Did you ever have a feeling that your (or someone else's plugin) has too heavy interface?
 
