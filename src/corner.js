@@ -67,7 +67,7 @@
 
                         if (mutationEvent.attributeName === 'class') {
                             var oldClassList = (mutationEvent.oldValue || '').toLowerCase().split(' '),
-                                newClassList = (target.className || '').toLowerCase().split(' ');
+                                newClassList = (target.getAttribute('class') || '').toLowerCase().split(' ');
 
                             itar(oldClassList.filter(function (entry) {return newClassList.indexOf(entry) === -1}), function (name) {
                                 if (directive_map[name]) directive_removed(directive_map[name], target);
