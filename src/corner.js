@@ -121,7 +121,7 @@
         var element_tag_directives = [],
             element_class_directives = [],
             element_attribute_directives = [],
-            element_class_list = (element.className || '').toLowerCase().split(' ');
+            element_class_list = (element.getAttribute('class') || '').toLowerCase().split(' ');
         directive_list.forEach(function (directive) {
             if (element.tagName.toLowerCase() === directive.name)
                 element_tag_directives.push(directive);
