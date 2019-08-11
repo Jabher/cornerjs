@@ -691,7 +691,7 @@ if (typeof WeakMap === 'undefined') {
 
                         if (mutationEvent.attributeName === 'class') {
                             var oldClassList = (mutationEvent.oldValue || '').toLowerCase().split(' '),
-                                newClassList = (target.className || '').toLowerCase().split(' ');
+                                newClassList = (target.getAttribute('class') || '').toLowerCase().split(' ');
 
                             itar(oldClassList.filter(function (entry) {return newClassList.indexOf(entry) === -1}), function (name) {
                                 if (directive_map[name]) directive_removed(directive_map[name], target);
@@ -745,7 +745,7 @@ if (typeof WeakMap === 'undefined') {
         var element_tag_directives = [],
             element_class_directives = [],
             element_attribute_directives = [],
-            element_class_list = (element.className || '').toLowerCase().split(' ');
+            element_class_list = (element.getAttribute('class') || '').toLowerCase().split(' ');
         directive_list.forEach(function (directive) {
             if (element.tagName.toLowerCase() === directive.name)
                 element_tag_directives.push(directive);
